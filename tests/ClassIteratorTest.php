@@ -32,19 +32,20 @@ it('applies filter during iteration', function () {
     expect(iterator_to_array($iterator))->toHaveCount(2);
 });
 
-it('accepts a pure predicate without iterable filter behavior', function () {
+it('accepts a predicate that has no collection-filter behavior', function () {
     $predicate = new class implements PredicateInterface {
         public function accept(mixed $value, string|int|null $key = null): bool
         {
-            return str_ends_with($value->name, 'Controller');
+            return $value->name === 'UserController';
         }
     };
 
     $iterator = new ClassIterator($this->items, $predicate);
 
-    expect($iterator->toArray())->toHaveCount(2)
-        ->and($iterator->toArray()[0]->name)->toBe('UserController')
-        ->and($iterator->toArray()[1]->name)->toBe('ProductController');
+    expect(array_map(
+        static fn($info): string => $info->name,
+        $iterator->toArray(),
+    ))->toBe(['UserController']);
 });
 
 it('applies multiple filters with AND logic', function () {
@@ -114,6 +115,29 @@ it('returns a new instance with removed filter via withoutFilter', function () {
         ->and(iterator_to_array($unfiltered))->toHaveCount(3);
 });
 
-it('throws on invalid predicate in constructor', function () {
-    new ClassIterator([], ['not a predicate']);
+it('keeps immutable clones independent during interleaved iteration', function () {
+    $iterator = new ClassIterator($this->items);
+    $filtered = $iterator->withFilter(new PatternFilter('*'));
+
+    $originalCursor = $iterator->getIterator();
+    $filteredCursor = $filtered->getIterator();
+
+    expect($originalCursor->current()->name)->toBe('UserController')
+        ->and($filteredCursor->current()->name)->toBe('UserController');
+
+    $originalCursor->next();
+    expect($originalCursor->current()->name)->toBe('ProductController');
+
+    $filteredCursor->next();
+    expect($filteredCursor->current()->name)->toBe('ProductController');
+
+    $originalCursor->next();
+    expect($originalCursor->current()->name)->toBe('UserService');
+
+    $filteredCursor->next();
+    expect($filteredCursor->current()->name)->toBe('UserService');
+});
+
+it('throws on invalid filter in constructor', function () {
+    new ClassIterator([], ['not a filter']);
 })->throws(InvalidArgumentException::class, 'must implement PredicateInterface');
