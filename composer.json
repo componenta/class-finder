@@ -16,6 +16,10 @@
         {
             "type": "vcs",
             "url": "https://github.com/componenta/filter"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/componenta/iterator"
         }
     ],
     "require": {
@@ -25,7 +29,7 @@
         "componenta/arrayable": "^1.0",
         "componenta/config": "^2.0",
         "componenta/filter": "dev-audit/filter-tdd-fixes-20260911 as 2.0.0",
-        "componenta/iterator": "^1.0",
+        "componenta/iterator": "dev-fix/replayable-independent-cursors-20260911 as 1.1.0",
         "psr/log": "^3.0",
         "psr/container": "^2.0"
     },
