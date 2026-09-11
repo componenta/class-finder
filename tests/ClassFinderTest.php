@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Componenta\ClassFinder\ClassFinder;
 use Componenta\ClassFinder\Filter\PatternFilter;
 use Componenta\ClassFinder\Filter\InstantiableFilter;
+use Componenta\Filter\PredicateInterface;
 use Componenta\Tokenizer\TokenizerInterface;
 
 beforeEach(function () {
@@ -48,6 +49,20 @@ it('applies constructor filters to results', function () {
     expect($names)->toBe(['ScannedAbstract']);
 });
 
+it('accepts a pure predicate without iterable behavior', function () {
+    $predicate = new class implements PredicateInterface {
+        public function accept(mixed $value, string|int|null $key = null): bool
+        {
+            return $value->name === 'ScannedClass';
+        }
+    };
+
+    $finder = new ClassFinder($predicate);
+
+    expect(array_map(fn($info) => $info->name, $finder->find($this->scanDir)->toArray()))
+        ->toBe(['ScannedClass']);
+});
+
 it('applies multiple filters with AND logic', function () {
     $finder = new ClassFinder([
         new PatternFilter('Scanned*'),
@@ -81,6 +96,6 @@ it('accepts an array of directories', function () {
     expect($finder->find([$this->scanDir])->count())->toBe(5);
 });
 
-it('throws on invalid filter in constructor', function () {
-    new ClassFinder(['not a filter']);
-})->throws(InvalidArgumentException::class, 'must implement FilterInterface');
+it('throws on invalid predicate in constructor', function () {
+    new ClassFinder(['not a predicate']);
+})->throws(InvalidArgumentException::class, 'must implement PredicateInterface');
