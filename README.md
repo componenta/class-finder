@@ -1,9 +1,9 @@
 # Componenta ClassFinder
 
-Lazy PHP declaration discovery with composable filters and listener notification.
+Lazy PHP declaration discovery with composable predicates and listener notification.
 
 ClassFinder scans PHP files, extracts named class/interface/trait/enum declarations
-through `componenta/tokenizer`, applies filters, and returns a replayable iterator of
+through `componenta/tokenizer`, applies predicates, and returns a replayable iterator of
 `ClassInfo` metadata.
 
 ## Installation
@@ -17,7 +17,7 @@ composer require componenta/class-finder
 - PHP 8.4+
 - `symfony/finder`
 - `componenta/tokenizer`
-- `componenta/filter`
+- `componenta/filter` 2.x
 - `componenta/arrayable`
 - `componenta/iterator`
 - `psr/container`
@@ -30,7 +30,7 @@ composer require componenta/class-finder
 | `componenta/tokenizer` | Parses PHP source and returns `ClassInfo` declarations. |
 | `symfony/finder` | Walks directories and selects PHP files. |
 | `componenta/iterator` | Provides replayable iteration over discovered declarations. |
-| `componenta/filter` | Provides composable filters used by the finder. |
+| `componenta/filter` | Provides `PredicateInterface` and reusable predicate-backed filters. |
 | `componenta/app` and `*-app` packages | Run class discovery while building application cache. |
 
 ## Quick Start
@@ -52,6 +52,30 @@ foreach ($controllers as $file => $classInfo) {
 }
 ```
 
+## Predicates
+
+`ClassFinder` and `ClassIterator` accept `Componenta\Filter\PredicateInterface`.
+A predicate does not need iterable/filter behavior:
+
+```php
+use Componenta\ClassFinder\ClassFinder;
+use Componenta\Filter\PredicateInterface;
+
+$controllers = new class implements PredicateInterface {
+    public function accept(mixed $value, string|int|null $key = null): bool
+    {
+        return str_ends_with($value->name, 'Controller');
+    }
+};
+
+$finder = new ClassFinder($controllers);
+```
+
+The built-in ClassFinder filters still extend `Componenta\Filter\AbstractFilter`, so they
+also implement `FilterInterface` and remain usable as both predicates and iterable filters.
+Collection-only operators such as `PercentageFilter` and `MergingFilter` are intentionally
+not valid ClassFinder predicates.
+
 ## Search Modes
 
 `find()` accepts the tokenizer search bitmask directly:
@@ -71,7 +95,7 @@ Search mode is a per-call argument. It is not a DI configuration key.
 ## ClassIterator
 
 `ClassFinder::find()` returns `ClassIteratorInterface`: lazy, replayable,
-countable, arrayable, and filterable.
+countable, arrayable, and predicate-filterable.
 
 ```php
 $classes = $finder->find('src/');
@@ -82,7 +106,8 @@ $classes->toArray(); // list<ClassInfo>
 $filtered = $classes->withFilter(PatternFilter::namespace('App\\Http'));
 ```
 
-The iterator caches traversed declarations so it can be iterated more than once.
+`withFilter()` and `withoutFilter()` accept `PredicateInterface`. The iterator caches
+traversed declarations so it can be iterated more than once.
 
 ## Pattern Filters
 
@@ -109,7 +134,7 @@ string containing `\` is treated as a fully-qualified class name or FQN pattern.
 
 ## Reflection Filters
 
-Some filters require the declaration to be loaded because they use
+Some predicates require the declaration to be loaded because they use
 `ClassInfo::$reflector`:
 
 - `AttributeSearchFilter`
@@ -120,8 +145,8 @@ Some filters require the declaration to be loaded because they use
 - `ImplementsAnyFilter`
 - `SubclassFilter`
 
-These filters are appropriate when scanned classes are autoloadable. For pure
-source inspection of unloaded files, prefer metadata-only filters such as
+These predicates are appropriate when scanned classes are autoloadable. For pure
+source inspection of unloaded files, prefer metadata-only predicates such as
 `PatternFilter`, `InstantiableFilter`, `IsAbstractFilter`, and `IsFinalFilter`.
 
 ## Attribute Filters
@@ -150,7 +175,6 @@ Listeners are notified for each accepted declaration. Finalizable listeners are
 finalized after scanning, even when no declarations were found.
 
 ```php
-use Componenta\ClassFinder\ClassListenerInterface;
 use Componenta\ClassFinder\FinalizableListenerInterface;
 use Componenta\Tokenizer\ClassInfo;
 
@@ -230,11 +254,20 @@ Runtime configuration keys are defined in `Componenta\ClassFinder\ConfigKey`:
 
 | Constant | Value | Description |
 |----------|-------|-------------|
-| `ConfigKey::FILTERS` | `Componenta\ClassFinder:filters` | Default `FilterInterface` instances for `ClassFinderFactory`. |
+| `ConfigKey::FILTERS` | `Componenta\ClassFinder:filters` | Default `PredicateInterface` instances for `ClassFinderFactory`. |
 | `ConfigKey::LISTENERS` | `Componenta\ClassFinder:listeners` | Listener service ids or `ClassListenerInterface` instances. |
 
-Listener config is fail-fast: every entry must be a listener instance or a
-service id string resolving to `ClassListenerInterface`.
+The `FILTERS` key keeps its existing name, but entries are predicates in 2.x. Listener
+config remains fail-fast: every listener entry must be an instance or a service id string
+resolving to `ClassListenerInterface`.
+
+## Breaking Changes for filter 2.x
+
+- `ClassFinder` and `ClassIterator` accept `PredicateInterface` instead of `FilterInterface`.
+- Pure predicates no longer need `IteratorAggregate`, `withIterable()`, or `toArray()`.
+- Collection-only filter operators cannot be passed as discovery predicates.
+- Existing ClassFinder filter classes remain source-compatible because `FilterInterface`
+  extends `PredicateInterface` in componenta/filter 2.x.
 
 ## License
 
