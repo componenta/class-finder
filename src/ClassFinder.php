@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Componenta\ClassFinder;
 
 use Componenta\Filter\Filterable;
-use Componenta\Filter\FilterInterface;
 use Componenta\Filter\FilterableInterface;
+use Componenta\Filter\PredicateInterface;
 use Componenta\Tokenizer\ClassInfo;
 use Componenta\Tokenizer\Tokenizer;
 use Componenta\Tokenizer\TokenizerInterface;
@@ -15,8 +15,8 @@ use Psr\Log\NullLogger;
 use Symfony\Component\Finder\Finder;
 
 /**
- * @method ClassFinder withFilter(FilterInterface $filter, bool $prepend = false)
- * @method ClassFinder withoutFilter(FilterInterface $filter)
+ * @method ClassFinder withFilter(PredicateInterface $filter, bool $prepend = false)
+ * @method ClassFinder withoutFilter(PredicateInterface $filter)
  */
 final class ClassFinder implements ClassFinderInterface, FilterableInterface
 {
@@ -28,12 +28,10 @@ final class ClassFinder implements ClassFinderInterface, FilterableInterface
     private LoggerInterface $logger;
 
     /**
-     * @param iterable<FilterInterface>|FilterInterface $filters
-     *
-     * @throws \InvalidArgumentException If any provided filter does not implement FilterInterface.
+     * @param iterable<PredicateInterface>|PredicateInterface $filters
      */
     public function __construct(
-        iterable|FilterInterface $filters = [],
+        iterable|PredicateInterface $filters = [],
         ?TokenizerInterface $tokenizer = null,
         ?LoggerInterface $logger = null,
     ) {
