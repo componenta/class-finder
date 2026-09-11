@@ -6,12 +6,12 @@ namespace Componenta\ClassFinder;
 
 use Componenta\Tokenizer\ClassInfo;
 use Componenta\Filter\Filterable;
-use Componenta\Filter\FilterInterface;
+use Componenta\Filter\PredicateInterface;
 use Componenta\Stdlib\ReplayableIterator;
 
 /**
- * @method ClassIterator withFilter(FilterInterface $filter, bool $prepend = false)
- * @method ClassIterator withoutFilter(FilterInterface $filter)
+ * @method ClassIterator withFilter(PredicateInterface $filter, bool $prepend = false)
+ * @method ClassIterator withoutFilter(PredicateInterface $filter)
  */
 final class ClassIterator implements ClassIteratorInterface
 {
@@ -26,13 +26,11 @@ final class ClassIterator implements ClassIteratorInterface
 
     /**
      * @param iterable<string, ClassInfo> $classes
-     * @param FilterInterface|iterable<FilterInterface> $filters
-     *
-     * @throws \InvalidArgumentException If any provided filter does not implement FilterInterface.
+     * @param PredicateInterface|iterable<PredicateInterface> $filters
      */
     public function __construct(
         iterable $classes,
-        FilterInterface|iterable $filters = [],
+        PredicateInterface|iterable $filters = [],
     ) {
         $this->initFilters($filters);
         $this->iterator = new ReplayableIterator($classes);
