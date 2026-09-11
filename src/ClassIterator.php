@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Componenta\ClassFinder;
 
-use Componenta\Tokenizer\ClassInfo;
 use Componenta\Filter\Filterable;
 use Componenta\Filter\PredicateInterface;
 use Componenta\Stdlib\ReplayableIterator;
+use Componenta\Tokenizer\ClassInfo;
 
 /**
  * @method ClassIterator withFilter(PredicateInterface $filter, bool $prepend = false)
@@ -44,7 +44,7 @@ final class ClassIterator implements ClassIteratorInterface
     /** @return \Generator<string, ClassInfo> */
     public function getIterator(): \Generator
     {
-        foreach ($this->iterator as $filename => $classInfo) {
+        foreach ($this->iterator->cursor() as $filename => $classInfo) {
             if ($this->accept($classInfo, $filename)) {
                 yield $filename => $classInfo;
             }
