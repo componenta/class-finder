@@ -10,6 +10,7 @@ use Componenta\ClassFinder\Tests\Fixture\UserController;
 use Componenta\ClassFinder\Tests\Fixture\ProductController;
 use Componenta\ClassFinder\Tests\Fixture\UserService;
 use Componenta\ClassFinder\Tests\Fixture\AbstractSample;
+use Componenta\Filter\PredicateInterface;
 
 beforeEach(function () {
     $this->items = [
@@ -31,6 +32,21 @@ it('applies filter during iteration', function () {
     expect(iterator_to_array($iterator))->toHaveCount(2);
 });
 
+it('accepts a pure predicate without iterable filter behavior', function () {
+    $predicate = new class implements PredicateInterface {
+        public function accept(mixed $value, string|int|null $key = null): bool
+        {
+            return str_ends_with($value->name, 'Controller');
+        }
+    };
+
+    $iterator = new ClassIterator($this->items, $predicate);
+
+    expect($iterator->toArray())->toHaveCount(2)
+        ->and($iterator->toArray()[0]->name)->toBe('UserController')
+        ->and($iterator->toArray()[1]->name)->toBe('ProductController');
+});
+
 it('applies multiple filters with AND logic', function () {
     $items = [...$this->items, ClassInfoFactory::fromClass(AbstractSample::class)];
 
@@ -39,8 +55,6 @@ it('applies multiple filters with AND logic', function () {
         new InstantiableFilter(),
     ]);
 
-    // AbstractSample matches *Sample* but is rejected by InstantiableFilter (abstract)
-    // No other item matches *Sample*, so result is empty
     expect(iterator_to_array($iterator))->toHaveCount(0);
 });
 
@@ -100,6 +114,6 @@ it('returns a new instance with removed filter via withoutFilter', function () {
         ->and(iterator_to_array($unfiltered))->toHaveCount(3);
 });
 
-it('throws on invalid filter in constructor', function () {
-    new ClassIterator([], ['not a filter']);
-})->throws(InvalidArgumentException::class, 'must implement FilterInterface');
+it('throws on invalid predicate in constructor', function () {
+    new ClassIterator([], ['not a predicate']);
+})->throws(InvalidArgumentException::class, 'must implement PredicateInterface');
