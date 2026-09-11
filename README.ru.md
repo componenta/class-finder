@@ -1,8 +1,8 @@
 # Componenta ClassFinder
 
-Ленивое обнаружение PHP-объявлений в файлах. Пакет обходит директории, читает PHP-файлы через `componenta/tokenizer`, применяет фильтры и возвращает переигрываемый итератор `ClassInfo`.
+Ленивое обнаружение PHP-объявлений с компонуемыми предикатами и уведомлением слушателей.
 
-Используйте пакет, когда приложению нужно найти классы, интерфейсы, трейты или enum по директориям: например, контроллеры с `#[Route]`, обработчики команд, слушателей событий или конфигурационные провайдеры.
+ClassFinder обходит PHP-файлы, извлекает объявления class/interface/trait/enum через `componenta/tokenizer`, применяет предикаты и возвращает переигрываемый итератор `ClassInfo`.
 
 ## Установка
 
@@ -15,22 +15,31 @@ composer require componenta/class-finder
 - PHP 8.4+
 - `symfony/finder`
 - `componenta/tokenizer`
-- `componenta/filter`
+- `componenta/filter` 2.x
 - `componenta/arrayable`
 - `componenta/iterator`
 - `psr/container`
 - `psr/log`
 
-## Связанные пакеты
+## Предикаты
 
-| Пакет | Зачем нужен здесь |
-|---|---|
-| `componenta/tokenizer` | Разбирает PHP-код и возвращает `ClassInfo`. |
-| `symfony/finder` | Обходит директории и выбирает PHP-файлы. |
-| `componenta/iterator` | Даёт переигрываемый итератор найденных объявлений. |
-| `componenta/filter` | Используется для компонуемых фильтров. |
-| `componenta/app` и `*-app` пакеты | Запускают обнаружение классов при сборке кеша приложения. |
-| `psr/container` | Нужен, если слушатели обнаружения берутся из контейнера по service id. |
+`ClassFinder` и `ClassIterator` принимают `Componenta\Filter\PredicateInterface`. Пользовательский предикат больше не обязан реализовывать iterable-контракт:
+
+```php
+use Componenta\ClassFinder\ClassFinder;
+use Componenta\Filter\PredicateInterface;
+
+$controllers = new class implements PredicateInterface {
+    public function accept(mixed $value, string|int|null $key = null): bool
+    {
+        return str_ends_with($value->name, 'Controller');
+    }
+};
+
+$finder = new ClassFinder($controllers);
+```
+
+Встроенные фильтры ClassFinder по-прежнему наследуются от `Componenta\Filter\AbstractFilter`, поэтому реализуют и `PredicateInterface`, и обычный `FilterInterface`. Collection-only операторы, например `PercentageFilter` и `MergingFilter`, предикатами ClassFinder не являются.
 
 ## Быстрый старт
 
@@ -65,11 +74,11 @@ $contracts = $finder->find(
 );
 ```
 
-Режим поиска задаётся на конкретный вызов `find()`. Это не ключ DI-конфига.
+Режим поиска задаётся на конкретный вызов `find()`.
 
-## Итератор классов
+## ClassIterator
 
-`ClassFinder::find()` возвращает `ClassIteratorInterface`: ленивый, переигрываемый, счётный итератор с `toArray()` и фильтрацией.
+`ClassFinder::find()` возвращает `ClassIteratorInterface`: ленивый, переигрываемый, countable и arrayable итератор, который можно дополнительно фильтровать предикатами.
 
 ```php
 $classes = $finder->find('src/');
@@ -80,19 +89,19 @@ $classes->toArray();
 $filtered = $classes->withFilter(PatternFilter::namespace('App\\Http'));
 ```
 
-Итератор кеширует уже пройденные объявления, поэтому его можно обходить несколько раз.
+`withFilter()` и `withoutFilter()` принимают `PredicateInterface`.
 
 ## Фильтры по имени
 
-`PatternFilter` сопоставляет `ClassInfo` без рефлексии.
+`PatternFilter` сопоставляет `ClassInfo` без reflection:
 
 ```php
 use Componenta\ClassFinder\Filter\PatternFilter;
 
-new PatternFilter('*Controller');         // суффикс имени класса
-new PatternFilter('User*');               // префикс имени класса
-new PatternFilter('App\\User');           // точный FQCN
-new PatternFilter('*\\Api\\*Controller'); // маска по FQCN
+new PatternFilter('*Controller');
+new PatternFilter('User*');
+new PatternFilter('App\\User');
+new PatternFilter('*\\Api\\*Controller');
 
 PatternFilter::exactMatch('UserController');
 PatternFilter::namespace('App\\Http');
@@ -102,11 +111,9 @@ PatternFilter::fqn('App\\*\\*Controller');
 PatternFilter::in(['UserController', 'PostController']);
 ```
 
-Используйте `exactNamespace()`, когда входное значение является namespace без маски. Строка с `\` в конструкторе считается FQCN или FQCN-паттерном.
+## Фильтры с reflection
 
-## Фильтры с рефлексией
-
-Часть фильтров требует, чтобы объявление уже было загружено через autoload, потому что они используют `ClassInfo::$reflector`:
+Некоторые предикаты требуют, чтобы объявление было доступно через autoload, поскольку используют `ClassInfo::$reflector`:
 
 - `AttributeSearchFilter`
 - `AttributePatternFilter`
@@ -116,7 +123,7 @@ PatternFilter::in(['UserController', 'PostController']);
 - `ImplementsAnyFilter`
 - `SubclassFilter`
 
-Эти фильтры подходят, когда найденные классы доступны через autoload. Для чистого анализа исходников без загрузки классов используйте фильтры по данным токенайзера: `PatternFilter`, `InstantiableFilter`, `IsAbstractFilter`, `IsFinalFilter`.
+Для анализа исходников без загрузки классов используйте metadata-only предикаты: `PatternFilter`, `InstantiableFilter`, `IsAbstractFilter`, `IsFinalFilter`.
 
 ## Фильтры атрибутов
 
@@ -136,11 +143,9 @@ AttributePatternFilter::attributePrefix('App\\Attribute\\');
 new AnyAttributeFilter([Route::class, Command::class], deepSearch: true);
 ```
 
-`deepSearch: true` дополнительно проверяет методы, свойства и константы.
-
 ## Слушатели
 
-Слушатели получают найденные объявления. `FinalizableListenerInterface` финализируется после сканирования, даже если объявлений не найдено.
+Слушатели получают найденные объявления. `FinalizableListenerInterface` финализируется после сканирования, даже если объявления не найдены.
 
 ```php
 use Componenta\ClassFinder\FinalizableListenerInterface;
@@ -160,56 +165,39 @@ final class RouteCollector implements FinalizableListenerInterface
 
     public function finalize(): void
     {
-        // Собрать финальный реестр или cache.
     }
 }
 ```
-
-`ClassListenerNotifier` один раз материализует список слушателей на вызов `notify()`, поэтому `handle()` и `finalize()` вызываются на тех же экземплярах.
-
-Если финализируемый слушатель затем компилируется в сборочный кеш приложения, он должен также реализовать `FinalizationStateInterface`. Свойство `finalized` становится `true` только после успешного `finalize()`. Повторный вызов `finalize()` может быть ошибкой домена слушателя; для такого случая пакет предоставляет `FinalizationExceptionInterface` и `ListenerAlreadyFinalizedException`.
-
-## Интеграция с компиляцией
-
-Пакеты, которые собирают метаданные через слушателей, могут предоставить компилятор без зависимости от раннера приложения:
-
-```php
-use Componenta\ClassFinder\Compile\CompileResult;
-use Componenta\ClassFinder\Compile\ListenerCompilerInterface;
-
-final class RouteCollectorCompiler implements ListenerCompilerInterface
-{
-    public function supports(object $listener): bool
-    {
-        return $listener instanceof RouteCollector;
-    }
-
-    public function compile(object $listener, string $cacheDir): CompileResult
-    {
-        return CompileResult::filesOnly([
-            $cacheDir . '/routes.cache.php' => '<?php return [];',
-        ]);
-    }
-}
-```
-
-Классы компиляторов регистрируются под ключом `Componenta\ClassFinder\Compile\ConfigKey::LISTENER_COMPILERS`. Хост-приложение решает, когда запускать обнаружение и куда писать дополнительные файлы кеша.
-
-Компилятор слушателя не должен сам сканировать классы, вызывать `finalize()` или читать приватное состояние слушателя через reflection. Он получает объект, который уже прошел discovery lifecycle. Интеграционный слой `componenta/app` перед вызовом компилятора проверяет, что финализируемый слушатель реализует `FinalizationStateInterface` и уже финализирован.
 
 ## Интеграция с контейнером
-
-Провайдер пакета:
 
 ```php
 $config = (new Componenta\ClassFinder\ConfigProvider())();
 ```
 
-Ключи конфигурации времени выполнения находятся в `Componenta\ClassFinder\ConfigKey`:
-
 | Константа | Значение | Описание |
 |-----------|----------|----------|
-| `ConfigKey::FILTERS` | `Componenta\ClassFinder:filters` | Фильтры по умолчанию для `ClassFinderFactory`. |
+| `ConfigKey::FILTERS` | `Componenta\ClassFinder:filters` | Предикаты `PredicateInterface` по умолчанию для `ClassFinderFactory`. |
 | `ConfigKey::LISTENERS` | `Componenta\ClassFinder:listeners` | Service id слушателей или экземпляры `ClassListenerInterface`. |
 
-Конфиг слушателей работает fail-fast: каждая запись должна быть экземпляром слушателя или строковым service id, который резолвится в `ClassListenerInterface`.
+Название ключа `FILTERS` сохранено, но в 2.x его элементы являются предикатами.
+
+## Breaking changes при переходе на componenta/filter 2.x
+
+- `ClassFinder` и `ClassIterator` принимают `PredicateInterface` вместо `FilterInterface`.
+- Пользовательскому предикату больше не нужны `IteratorAggregate`, `withIterable()` и `toArray()`.
+- Collection-only операторы нельзя передавать как discovery predicates.
+- Существующие встроенные фильтры остаются совместимы, поскольку `FilterInterface` в componenta/filter 2.x расширяет `PredicateInterface`.
+
+## Разработка
+
+```bash
+composer install
+composer test
+```
+
+Тесты написаны на Pest и прогоняются в CI на PHP 8.4 и 8.5.
+
+## Лицензия
+
+MIT
