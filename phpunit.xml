@@ -7,6 +7,8 @@
          executionOrder="random"
          failOnRisky="true"
          failOnWarning="true"
+         failOnNotice="true"
+         failOnSelfDeprecation="true"
          beStrictAboutTestsThatDoNotTestAnything="true"
 >
     <testsuites>
