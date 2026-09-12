@@ -37,3 +37,6 @@ jobs:
 
       - name: Run Pest
         run: composer test
+
+      - name: Run Pest in reverse order
+        run: ./vendor/bin/pest --reverse-order
