@@ -17,7 +17,8 @@ it('builds a listener provider from listener instances and service ids', functio
         public function __construct(
             private SpyListener $listener,
             private SimpleListener $serviceListener,
-        ) {}
+        ) {
+        }
 
         public function get(string $id): mixed
         {
@@ -54,7 +55,8 @@ it('builds a listener provider from the Config object used by the runtime contai
     $container = new class ($serviceListener) implements ContainerInterface {
         public function __construct(
             private SimpleListener $serviceListener,
-        ) {}
+        ) {
+        }
 
         public function get(string $id): mixed
         {
@@ -63,7 +65,7 @@ it('builds a listener provider from the Config object used by the runtime contai
                     ConfigKey::LISTENERS => [
                         SimpleListener::class,
                     ],
-                ]);
+                ], new \Componenta\Config\Environment([]));
             }
 
             if ($id === SimpleListener::class) {
@@ -86,7 +88,7 @@ it('builds a listener provider from the Config object used by the runtime contai
 });
 
 it('rejects invalid listener config entries instead of silently ignoring them', function () {
-    $container = new class implements ContainerInterface {
+    $container = new class () implements ContainerInterface {
         public function get(string $id): mixed
         {
             if ($id === 'config') {
@@ -109,3 +111,26 @@ it('rejects invalid listener config entries instead of silently ignoring them', 
     expect(fn () => (new ClassListenerProviderFactory())($container))
         ->toThrow(InvalidArgumentException::class, 'Listener entry at key "0"');
 });
+
+it('rejects malformed listener registrations through the runtime container', function (mixed $registrations): void {
+    $composition = (new \Componenta\Config\ConfigFactory())->create(
+        new \Componenta\Config\Environment([]),
+        new \Componenta\ClassFinder\ConfigProvider(),
+        static fn (): array => [ConfigKey::LISTENERS => $registrations],
+    );
+    $container = (new \Componenta\DI\ContainerFactory())->create($composition->config, $composition->dependencies);
+
+    try {
+        $container->get(\Componenta\ClassFinder\ClassListenerProviderInterface::class);
+    } catch (\Componenta\DI\Exception\ResolutionException $exception) {
+        expect($exception->getPrevious())->toBeInstanceOf(InvalidArgumentException::class)
+            ->and($exception->getPrevious()->getMessage())->toContain(ConfigKey::LISTENERS);
+        return;
+    }
+
+    $this->fail('Malformed listener configuration must prevent service creation.');
+})->with([
+    'service id without list' => ['some-listener-service'],
+    'false' => [false],
+    'non-list object' => [new stdClass()],
+]);

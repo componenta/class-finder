@@ -67,6 +67,7 @@ final class AttributePatternFilter extends AbstractFilter
         return new self($attributeName, $deepSearch);
     }
 
+    /** @param array<array-key, string> $attributeNames */
     public static function anyAttribute(array $attributeNames, bool $deepSearch = false): AbstractFilter
     {
         return new AnyAttributeFilter($attributeNames, $deepSearch);

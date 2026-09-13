@@ -7,19 +7,20 @@ namespace Componenta\ClassFinder\Filter;
 use Componenta\Filter\AbstractFilter;
 use Componenta\Tokenizer\ClassInfo;
 
-/**
- * Filters classes that implement ANY of the specified interfaces (OR logic)
- */
+/** Filters classes that implement ANY of the specified interfaces (OR logic). */
 final class ImplementsAnyFilter extends AbstractFilter
 {
-    private readonly array $interfacesFlipped;
+    /** @var list<string> */
+    private readonly array $interfaces;
 
-    public function __construct(
-        array $interfaces,
-        iterable $iterable = []
-    ) {
+    /**
+     * @param array<array-key, string> $interfaces
+     * @param iterable<array-key, mixed> $iterable
+     */
+    public function __construct(array $interfaces, iterable $iterable = [])
+    {
         parent::__construct($iterable);
-        $this->interfacesFlipped = array_flip($interfaces);
+        $this->interfaces = array_values($interfaces);
     }
 
     public function accept(mixed $value, string|int|null $key = null): bool
@@ -28,7 +29,12 @@ final class ImplementsAnyFilter extends AbstractFilter
             return false;
         }
 
-        return array_any($value->reflector->getInterfaceNames(), fn($interface) => isset($this->interfacesFlipped[$interface]));
+        $reflection = $value->reflector;
 
+        return array_any(
+            $this->interfaces,
+            static fn (string $interface): bool => interface_exists($interface)
+                && $reflection->implementsInterface($interface),
+        );
     }
 }

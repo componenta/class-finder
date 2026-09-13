@@ -100,14 +100,20 @@ countable, arrayable, and predicate-filterable.
 ```php
 $classes = $finder->find('src/');
 
-$classes->count();   // forces traversal once and caches the count
+$classes->count();   // counts declarations matching the current predicates
 $classes->toArray(); // list<ClassInfo>
 
 $filtered = $classes->withFilter(PatternFilter::namespace('App\\Http'));
 ```
 
 `withFilter()` and `withoutFilter()` accept `PredicateInterface`. The iterator caches
-traversed declarations so it can be iterated more than once.
+traversed declarations so it can be iterated more than once. Each `count()` evaluates
+its current predicates again; changing a predicate or creating a filtered clone does
+not reuse a count computed for another predicate state. Interleaved iterations use
+independent cursors over the shared source cache. Nested traversal, filtered clones,
+and `count()` do not interrupt an active traversal. If the source throws, later reads
+rethrow the original exception, so partial discovery cannot be mistaken for a complete
+result.
 
 ## Pattern Filters
 
@@ -200,47 +206,20 @@ final class RouteCollector implements FinalizableListenerInterface
 `ClassListenerNotifier` snapshots the provider's listeners once per `notify()`
 call, so the same listener instances receive `handle()` and `finalize()`.
 
-When a finalizable listener is later compiled into an application build cache,
-it should also implement `FinalizationStateInterface`. The `finalized`
+A listener can expose its completion state through `FinalizationStateInterface`. The `finalized`
 property becomes `true` only after a successful `finalize()` call. Repeated
 finalization may be rejected by the listener; the package provides
 `FinalizationExceptionInterface` and `ListenerAlreadyFinalizedException` for
 that case.
 
-## Compile Integration
+## Application build integration
 
-Packages that collect metadata through listeners can expose compilers without
-depending on an application runner:
-
-```php
-use Componenta\ClassFinder\Compile\CompileResult;
-use Componenta\ClassFinder\Compile\ListenerCompilerInterface;
-
-final class RouteCollectorCompiler implements ListenerCompilerInterface
-{
-    public function supports(object $listener): bool
-    {
-        return $listener instanceof RouteCollector;
-    }
-
-    public function compile(object $listener, string $cacheDir): CompileResult
-    {
-        return CompileResult::filesOnly([
-            $cacheDir . '/routes.cache.php' => '<?php return [];',
-        ]);
-    }
-}
-```
-
-Register compiler class names under
-`Componenta\ClassFinder\Compile\ConfigKey::LISTENER_COMPILERS`. The host application
-decides when discovery runs and where sidecar files are written.
-
-A listener compiler should not scan classes, call `finalize()`, or read private
-listener state through reflection. It receives an object that has already passed
-through the discovery lifecycle. The `componenta/app` integration checks before
-compilation that a finalizable listener implements `FinalizationStateInterface`
-and is already finalized.
+Applications and integration packages register independent builders through
+`Componenta\App\ConfigKey::BUILDERS`. Each builder implements
+`ApplicationBuilderInterface::build(): void` and receives the shared source
+iterator or a prepared listener through its constructor. The builder owns its
+artifact format and writes. Class discovery and listener notification remain
+available independently of application builds.
 
 ## Container Integration
 

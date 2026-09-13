@@ -67,7 +67,11 @@ final class PatternFilter extends AbstractFilter
 
     private function isSimpleNamespacePattern(string $pattern): bool
     {
-        if (str_ends_with($pattern, '\\*') && substr_count($pattern, '*') === 1) {
+        if (
+            str_ends_with($pattern, '\\*')
+            && substr_count($pattern, '*') === 1
+            && strpbrk($pattern, '?[') === false
+        ) {
             return true;
         }
 

@@ -19,8 +19,6 @@ final class ClassIterator implements ClassIteratorInterface
         accept as private;
     }
 
-    private ?int $cachedCount = null;
-
     /** @var ReplayableIterator<string, ClassInfo> */
     private ReplayableIterator $iterator;
 
@@ -34,11 +32,6 @@ final class ClassIterator implements ClassIteratorInterface
     ) {
         $this->initFilters($filters);
         $this->iterator = new ReplayableIterator($classes);
-    }
-
-    public function __clone(): void
-    {
-        $this->cachedCount = null;
     }
 
     /** @return \Generator<string, ClassInfo> */
@@ -66,16 +59,12 @@ final class ClassIterator implements ClassIteratorInterface
     /** @return int<0, max> */
     public function count(): int
     {
-        if ($this->cachedCount !== null) {
-            return $this->cachedCount;
-        }
-
         $count = 0;
 
         foreach ($this as $_) {
             $count++;
         }
 
-        return $this->cachedCount = $count;
+        return $count;
     }
 }

@@ -14,15 +14,17 @@ final class AnyAttributeFilter extends AbstractFilter
 {
     use SearchesClassMembers;
 
+    /** @var array<string, array-key> */
     private readonly array $attributesFlipped;
 
+    /** @param array<array-key, string> $attributeNames */
     public function __construct(
         array $attributeNames,
         private readonly bool $deepSearch = false,
         iterable $iterable = []
     ) {
         parent::__construct($iterable);
-        $this->attributesFlipped = array_flip($attributeNames);
+        $this->attributesFlipped = array_flip(array_map(strtolower(...), $attributeNames));
     }
 
     public function accept(mixed $value, string|int|null $key = null): bool
@@ -31,7 +33,7 @@ final class AnyAttributeFilter extends AbstractFilter
             return false;
         }
 
-        if (array_any($value->reflector->getAttributes(), fn($attr) => isset($this->attributesFlipped[$attr->getName()]))) {
+        if (array_any($value->reflector->getAttributes(), fn($attr) => isset($this->attributesFlipped[strtolower($attr->getName())]))) {
             return true;
         }
 
@@ -43,7 +45,7 @@ final class AnyAttributeFilter extends AbstractFilter
             $value->reflector,
             fn(array $attrs): bool => array_any(
                 $attrs,
-                fn($attr) => isset($this->attributesFlipped[$attr->getName()]),
+                fn($attr) => isset($this->attributesFlipped[strtolower($attr->getName())]),
             ),
         );
     }

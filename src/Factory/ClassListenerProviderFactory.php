@@ -27,8 +27,12 @@ final class ClassListenerProviderFactory
             return new ClassListenerProvider();
         }
 
-        if (!is_array($listenerEntries) || $listenerEntries === []) {
-            return new ClassListenerProvider();
+        if (!is_array($listenerEntries)) {
+            throw new \InvalidArgumentException(sprintf(
+                'Configuration "%s" must be an array of listeners, got %s.',
+                ConfigKey::LISTENERS,
+                get_debug_type($listenerEntries),
+            ));
         }
 
         $listeners = [];

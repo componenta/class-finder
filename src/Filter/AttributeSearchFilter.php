@@ -15,7 +15,9 @@ final class AttributeSearchFilter extends AbstractFilter
 {
     use SearchesClassMembers;
 
+    /** @var list<string> */
     private array $attributeClasses = [];
+    /** @var list<string> */
     private array $attributePatterns = [];
     /** @var list<\Closure> */
     private array $patternMatchers = [];
@@ -23,6 +25,7 @@ final class AttributeSearchFilter extends AbstractFilter
     private bool $hasAttributePatterns = false;
     private int $totalSearches;
 
+    /** @param array<array-key, string> $attributes */
     public function __construct(
         private readonly array $attributes = [],
         private readonly bool $matchAll = false,
@@ -52,7 +55,7 @@ final class AttributeSearchFilter extends AbstractFilter
 
     private function isPattern(string $value): bool
     {
-        return str_contains($value, '*') || str_contains($value, '?');
+        return strpbrk($value, '*?[') !== false;
     }
 
     public function accept(mixed $value, string|int|null $key = null): bool
@@ -172,6 +175,11 @@ final class AttributeSearchFilter extends AbstractFilter
         return count($foundClasses) + count($foundPatterns);
     }
 
+    /**
+     * @param list<\ReflectionAttribute<object>> $attributes
+     * @param array<int, true> $foundClasses
+     * @param array<int, true> $foundPatterns
+     */
     private function checkMemberAttributes(array $attributes, array &$foundClasses, array &$foundPatterns): void
     {
         if ($this->hasAttributeClasses) {
@@ -183,7 +191,7 @@ final class AttributeSearchFilter extends AbstractFilter
                         continue;
                     }
 
-                    if ($attrName === $attributeClass) {
+                    if (strcasecmp($attrName, $attributeClass) === 0) {
                         $foundClasses[$idx] = true;
                     }
                 }
@@ -224,11 +232,13 @@ final class AttributeSearchFilter extends AbstractFilter
         return new HasAnyAttributesFilter($mustHaveAttributes, $deepSearch);
     }
 
+    /** @param array<array-key, string> $attributes */
     public static function hasAnyAttribute(array $attributes, bool $deepSearch = false): self
     {
         return new self($attributes, matchAll: false, deepSearch: $deepSearch);
     }
 
+    /** @param array<array-key, string> $attributes */
     public static function hasAllAttributes(array $attributes, bool $deepSearch = false): self
     {
         return new self($attributes, matchAll: true, deepSearch: $deepSearch);

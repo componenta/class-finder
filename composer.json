@@ -12,29 +12,20 @@
     ],
     "type": "library",
     "license": "MIT",
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/componenta/filter"
-        },
-        {
-            "type": "vcs",
-            "url": "https://github.com/componenta/iterator"
-        }
-    ],
     "require": {
         "php": "^8.4",
         "symfony/finder": "^7.0 || ^8.0",
         "componenta/tokenizer": "^1.0",
         "componenta/arrayable": "^1.0",
-        "componenta/config": "^2.0",
-        "componenta/filter": "dev-audit/filter-tdd-fixes-20260911 as 2.0.0",
-        "componenta/iterator": "dev-fix/replayable-independent-cursors-20260911 as 1.1.0",
+        "componenta/config": "^3.0.0",
+        "componenta/filter": "^2.0.0",
+        "componenta/iterator": "^1.1.0",
         "psr/log": "^3.0",
         "psr/container": "^2.0"
     },
     "require-dev": {
-        "pestphp/pest": "^5.0"
+        "pestphp/pest": "^4.0",
+        "componenta/di": "^5.0.0"
     },
     "autoload": {
         "psr-4": {
@@ -51,6 +42,9 @@
             "config-providers": [
                 "Componenta\\ClassFinder\\ConfigProvider"
             ]
+        },
+        "branch-alias": {
+            "dev-main": "2.0.x-dev"
         }
     },
     "scripts": {
