@@ -91,6 +91,34 @@ $filtered = $classes->withFilter(PatternFilter::namespace('App\\Http'));
 
 `withFilter()` и `withoutFilter()` принимают `PredicateInterface`.
 
+### Восстановление подготовленной карты
+
+`ClassIterator::fromMap()` создаёт итератор из упорядоченного списка объявлений:
+
+```php
+use Componenta\ClassFinder\ClassIterator;
+
+$classes = ClassIterator::fromMap([
+    [
+        'file' => '/app/src/OrderDto.php',
+        'name' => 'App\\OrderDto',
+        'type' => 'class',
+        'abstract' => false,
+        'final' => true,
+        'readonly' => true,
+    ],
+]);
+```
+
+Каждая запись содержит непустые строки `file` и `name`, тип `class`, `interface`,
+`trait` или `enum` и булевы флаги `abstract`, `final`, `readonly`. Вся карта
+проверяется до возврата итератора; неверная запись вызывает `RuntimeException`.
+Пустой список допустим.
+
+Фабрика сохраняет порядок объявлений и повторяющиеся имена файлов. Она не читает
+файлы и не обходит директории. Обход, фильтрация и повторное чтение используют
+обычное поведение `ClassIterator`. Загрузка и сохранение карты остаются у вызывающего кода.
+
 ## Фильтры по имени
 
 `PatternFilter` сопоставляет `ClassInfo` без reflection:

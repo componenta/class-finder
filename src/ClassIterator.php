@@ -8,6 +8,8 @@ use Componenta\Filter\Filterable;
 use Componenta\Filter\PredicateInterface;
 use Componenta\Stdlib\ReplayableIterator;
 use Componenta\Tokenizer\ClassInfo;
+use Componenta\Tokenizer\DeclarationType;
+use RuntimeException;
 
 /**
  * @method ClassIterator withFilter(PredicateInterface $filter, bool $prepend = false)
@@ -32,6 +34,42 @@ final class ClassIterator implements ClassIteratorInterface
     ) {
         $this->initFilters($filters);
         $this->iterator = new ReplayableIterator($classes);
+    }
+
+    /**
+     * @param array<array-key, mixed> $map Records with file, name, type and abstract/final/readonly flags.
+     * @throws RuntimeException When any record is invalid; validation completes before iteration.
+     */
+    public static function fromMap(array $map): self
+    {
+        if (!array_is_list($map)) {
+            throw new RuntimeException('Discovery map must be a list of declarations.');
+        }
+
+        foreach ($map as $index => $entry) {
+            if (!is_array($entry)
+                || !is_string($entry['file'] ?? null) || $entry['file'] === ''
+                || !is_string($entry['name'] ?? null) || $entry['name'] === ''
+                || !is_string($entry['type'] ?? null) || DeclarationType::tryFrom($entry['type']) === null
+                || !is_bool($entry['abstract'] ?? null)
+                || !is_bool($entry['final'] ?? null)
+                || !is_bool($entry['readonly'] ?? null)
+            ) {
+                throw new RuntimeException(sprintf('Invalid discovery map declaration at index %d.', $index));
+            }
+        }
+
+        return new self((static function () use ($map): \Generator {
+            foreach ($map as $entry) {
+                yield $entry['file'] => new ClassInfo(
+                    fullyQualifiedName: $entry['name'],
+                    type: DeclarationType::from($entry['type']),
+                    isAbstract: $entry['abstract'],
+                    isFinal: $entry['final'],
+                    isReadonly: $entry['readonly'],
+                );
+            }
+        })());
     }
 
     /** @return \Generator<string, ClassInfo> */

@@ -115,6 +115,34 @@ and `count()` do not interrupt an active traversal. If the source throws, later 
 rethrow the original exception, so partial discovery cannot be mistaken for a complete
 result.
 
+### Restoring a prepared map
+
+`ClassIterator::fromMap()` creates an iterator from an ordered list of declaration records:
+
+```php
+use Componenta\ClassFinder\ClassIterator;
+
+$classes = ClassIterator::fromMap([
+    [
+        'file' => '/app/src/OrderDto.php',
+        'name' => 'App\\OrderDto',
+        'type' => 'class',
+        'abstract' => false,
+        'final' => true,
+        'readonly' => true,
+    ],
+]);
+```
+
+Every record requires non-empty `file` and `name` strings, a `type` of `class`,
+`interface`, `trait` or `enum`, and boolean `abstract`, `final` and `readonly` flags.
+The entire map is validated before the iterator is returned; invalid records throw
+`RuntimeException`. An empty list is valid.
+
+The factory preserves declaration order and repeated filenames. It does not read
+files or scan directories. Iteration, filtering and replay use the same `ClassIterator`
+behavior as discovery. Loading and storing the map belong to the caller.
+
 ## Pattern Filters
 
 `PatternFilter` matches `ClassInfo` metadata without reflection.
