@@ -19,13 +19,13 @@
         "componenta/arrayable": "^1.0",
         "componenta/config": "^3.0.0",
         "componenta/filter": "^2.0.0",
-        "componenta/iterator": "^1.1.0",
+        "componenta/iterator": "^1.1.1",
         "psr/log": "^3.0",
         "psr/container": "^2.0"
     },
     "require-dev": {
         "pestphp/pest": "^4.0",
-        "componenta/di": "^5.0.0"
+        "componenta/di": "^5.0.3"
     },
     "autoload": {
         "psr-4": {
@@ -44,7 +44,7 @@
             ]
         },
         "branch-alias": {
-            "dev-main": "2.0.x-dev"
+            "dev-main": "2.1.x-dev"
         }
     },
     "scripts": {
