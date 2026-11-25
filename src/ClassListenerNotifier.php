@@ -16,7 +16,14 @@ final readonly class ClassListenerNotifier
      */
     public function notify(ClassIteratorInterface $classes): void
     {
-        $listeners = [...$this->provider->getClassListeners()];
+        $listeners = [];
+        foreach ($this->provider->getClassListeners() as $listener) {
+            if (!$listener instanceof ClassListenerInterface) {
+                throw new \UnexpectedValueException('Listener provider must yield ClassListenerInterface instances.');
+            }
+
+            $listeners[] = $listener;
+        }
 
         foreach ($classes as $class) {
             foreach ($listeners as $listener) {
