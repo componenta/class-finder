@@ -55,6 +55,24 @@ try {
         'Integration\\DirectController',
         'Integration\\Service',
     ], 'Discovery lost or duplicated declarations.');
+
+    if (PHP_VERSION_ID >= 80500) {
+        $callbackSource = <<<'PHP'
+        <?php
+        namespace Integration;
+        #[Callback(static function (): void {
+            class AttributeController {}
+        })]
+        function decorated(): void {}
+        class DirectController {}
+        PHP;
+        $check(file_put_contents($file, $callbackSource) !== false, 'Cannot write callback fixture.');
+        $found = new ClassFinder()->find($dir)->withFilter(PatternFilter::endsWith('Controller'))->toArray();
+        $check(array_map(static fn ($info) => $info->fullyQualifiedName, $found) === [
+            'Integration\\AttributeController',
+            'Integration\\DirectController',
+        ], 'PHP 8.5 callback declarations were missed by discovery.');
+    }
 } finally {
     if (is_file($file)) {
         unlink($file);
@@ -77,5 +95,25 @@ $check($iterator->toArray(true) === ['' => 2], 'Unexpected key normalization.');
 $copy = clone $iterator;
 $copy->next();
 $check($iterator->current() === 1 && $copy->current() === 2, 'Completed clone shares cursor state.');
+
+$failure = new RuntimeException('Original source failure.');
+$failed = new ReplayableIterator(new class($failure) implements Iterator {
+    public function __construct(private readonly Throwable $failure) {}
+    public function rewind(): void {}
+    public function current(): mixed { return null; }
+    public function key(): mixed { return null; }
+    public function next(): void {}
+    public function valid(): bool { throw $this->failure; }
+    public function __destruct() { throw new RuntimeException('Cleanup failure.'); }
+});
+foreach ([static fn () => $failed->current(), static fn () => $failed->toArray()] as $read) {
+    $caught = null;
+    try {
+        $read();
+    } catch (Throwable $error) {
+        $caught = $error;
+    }
+    $check($caught === $failure, 'Replay replaced original error.');
+}
 
 echo "Audited dependency integration passed.\n";
