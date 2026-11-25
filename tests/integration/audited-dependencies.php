@@ -137,4 +137,27 @@ try {
     // The map must not silently be interpreted as a different declaration kind.
 }
 
+$classes = new \Componenta\ClassFinder\ClassIterator((static function (): Generator {
+    yield 'first.php' => new \Componenta\Tokenizer\ClassInfo('First');
+    Fiber::suspend('discovery paused');
+    yield 'second.php' => new \Componenta\Tokenizer\ClassInfo('Second');
+})());
+$reader = new Fiber(static fn () => count($classes));
+$check($reader->start() === 'discovery paused', 'Expected suspended discovery.');
+unset($reader);
+gc_collect_cycles();
+
+$filtered = $classes->withFilter(PatternFilter::exactMatch('First'));
+$interrupted = null;
+foreach ([static fn () => count($classes), static fn () => $filtered->toArray()] as $read) {
+    try {
+        $read();
+        throw new RuntimeException('Interrupted discovery returned a partial success.');
+    } catch (LogicException $error) {
+        $check($error->getMessage() === 'Source read was interrupted.', 'Unexpected interruption failure.');
+        $interrupted ??= $error;
+        $check($interrupted === $error, 'Filtered iterator lost the shared failure.');
+    }
+}
+
 echo "Audited dependency integration passed.\n";

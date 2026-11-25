@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           repository: componenta/iterator
-          ref: 3c18d17c62e5009d76159a55f043d601b1dc6049
+          ref: 005f152da3598c84f96121f72c9f9d92860697fd
           path: .audit-deps/iterator
           persist-credentials: false
       - uses: shivammathur/setup-php@v2
