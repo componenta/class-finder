@@ -30,7 +30,7 @@ jobs:
         run: composer validate --strict
 
       - name: Lint PHP sources and tests
-        run: find src tests -name '*.php' -print0 | xargs -0 -n1 php -l
+        run: find src tests benchmarks -name '*.php' -print0 | xargs -0 -n1 php -l
 
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist
@@ -40,3 +40,7 @@ jobs:
 
       - name: Run Pest in reverse order
         run: ./vendor/bin/pest --reverse-order
+
+      - name: Smoke test benchmark subjects
+        if: matrix.php == '8.4'
+        run: vendor/bin/phpbench run --filter=PredicateBench --iterations=1 --revs=1 --report=aggregate

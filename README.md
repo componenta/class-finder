@@ -292,3 +292,9 @@ resolving to `ClassListenerInterface`.
 ## License
 
 MIT
+
+## Benchmarks
+
+Run `composer bench` to measure cold filesystem discovery, restored maps, warm replay,
+metadata and reflection predicates, and listener notification. PHPBench fixtures
+are prepared outside the measured subject; after hooks verify expected results.
