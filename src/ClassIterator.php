@@ -46,6 +46,7 @@ final class ClassIterator implements ClassIteratorInterface
             throw new RuntimeException('Discovery map must be a list of declarations.');
         }
 
+        $validated = [];
         foreach ($map as $index => $entry) {
             if (!is_array($entry)
                 || !is_string($entry['file'] ?? null) || $entry['file'] === ''
@@ -57,10 +58,20 @@ final class ClassIterator implements ClassIteratorInterface
             ) {
                 throw new RuntimeException(sprintf('Invalid discovery map declaration at index %d.', $index));
             }
+
+            // Copy scalar fields individually to detach PHP references.
+            $validated[] = [
+                'file' => $entry['file'],
+                'name' => $entry['name'],
+                'type' => $entry['type'],
+                'abstract' => $entry['abstract'],
+                'final' => $entry['final'],
+                'readonly' => $entry['readonly'],
+            ];
         }
 
-        return new self((static function () use ($map): \Generator {
-            foreach ($map as $entry) {
+        return new self((static function () use ($validated): \Generator {
+            foreach ($validated as $entry) {
                 yield $entry['file'] => new ClassInfo(
                     fullyQualifiedName: $entry['name'],
                     type: DeclarationType::from($entry['type']),
