@@ -51,9 +51,27 @@ final class ClassFinder implements ClassFinderInterface, FilterableInterface
         int $mode = TokenizerInterface::SEARCH_ALL,
     ): ClassIterator {
         return new ClassIterator(
-            $this->createGenerator($dirs, $exclude, $mode),
+            $this->createGenerator(self::snapshotPaths($dirs), self::snapshotPaths($exclude), $mode),
             $this->filters,
         );
+    }
+
+    /**
+     * @param string|string[] $paths
+     * @return string|string[]
+     */
+    private static function snapshotPaths(string|array $paths): string|array
+    {
+        if (is_string($paths)) {
+            return $paths;
+        }
+
+        $snapshot = [];
+        foreach ($paths as $key => $path) {
+            $snapshot[$key] = $path;
+        }
+
+        return $snapshot;
     }
 
     /** @return \Generator<string, ClassInfo> */
@@ -89,12 +107,15 @@ final class ClassFinder implements ClassFinderInterface, FilterableInterface
                     yield $filePath => $declaration;
                 }
             } catch (\Throwable $e) {
-                $this->logger->warning('Failed to parse file: {file}', [
-                    'file' => $filePath,
-                    'exception' => $e,
-                ]);
-
-                throw $e;
+                try {
+                    $this->logger->warning('Failed to parse file: {file}', [
+                        'file' => $filePath,
+                        'exception' => $e,
+                    ]);
+                } finally {
+                    // Reporting must not replace the original discovery error.
+                    throw $e;
+                }
             }
         }
     }
