@@ -13,6 +13,9 @@ final readonly class ClassListenerNotifier
     /**
      * Notifies all listeners for each discovered class,
      * then calls finalize() on finalizable listeners regardless of result count.
+     * Source, handling and finalization errors propagate immediately.
+     * Finalization is a success callback, not cleanup; a failed traversal is
+     * not finalized. Effects already performed by listeners are not rolled back.
      */
     public function notify(ClassIteratorInterface $classes): void
     {
