@@ -7,26 +7,11 @@ namespace Componenta\ClassFinder\Benchmarks;
 use Componenta\ClassFinder\ClassIterator;
 use Componenta\ClassFinder\ClassListenerNotifier;
 use Componenta\ClassFinder\ClassListenerProvider;
-use Componenta\ClassFinder\FinalizableListenerInterface;
 use Componenta\Tokenizer\ClassInfo;
 use PhpBench\Attributes as Bench;
 use RuntimeException;
 
-final class CountingListener implements FinalizableListenerInterface
-{
-    public int $handled = 0;
-    public int $finalized = 0;
-
-    public function handle(ClassInfo $info): void
-    {
-        ++$this->handled;
-    }
-
-    public function finalize(): void
-    {
-        ++$this->finalized;
-    }
-}
+require_once __DIR__ . '/Fixture/CountingListener.php';
 
 #[Bench\Iterations(7)]
 #[Bench\Revs(1)]

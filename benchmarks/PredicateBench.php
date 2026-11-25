@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Componenta\ClassFinder\Benchmarks;
 
-use Attribute;
 use Componenta\ClassFinder\Filter\AttributeSearchFilter;
 use Componenta\ClassFinder\Filter\CallableFilter;
 use Componenta\ClassFinder\Filter\ImplementsFilter;
@@ -15,21 +14,7 @@ use Componenta\Tokenizer\ClassInfo;
 use PhpBench\Attributes as Bench;
 use RuntimeException;
 
-#[Attribute(Attribute::TARGET_CLASS)]
-final class RouteTag {}
-
-#[Attribute(Attribute::TARGET_METHOD)]
-final class MethodTag {}
-
-interface ContractA {}
-interface ContractB {}
-
-#[RouteTag]
-final class FixtureController implements ContractA, ContractB
-{
-    #[MethodTag]
-    public function __invoke(): void {}
-}
+require_once __DIR__ . '/Fixture/PredicateFixtures.php';
 
 #[Bench\Iterations(7)]
 #[Bench\Revs(1000)]
