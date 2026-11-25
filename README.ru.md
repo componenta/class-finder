@@ -151,7 +151,7 @@ PatternFilter::in(['UserController', 'PostController']);
 - `ImplementsAnyFilter`
 - `SubclassFilter`
 - `InstantiableFilter`
-- `CallableFilter` (конкретные классы с собственным или унаследованным открытым методом `__invoke`; видимость конструктора не учитывается)
+- `CallableFilter` (конкретные классы и перечисления с собственным или унаследованным открытым методом `__invoke`; видимость конструктора не учитывается)
 
 Для анализа исходников без загрузки классов используйте metadata-only предикаты: `PatternFilter`, `IsAbstractFilter`, `IsFinalFilter`. Фильтры с рефлексией могут
 инициировать автозагрузку, поэтому их следует использовать только с доверенным кодом.

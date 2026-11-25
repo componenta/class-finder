@@ -185,7 +185,7 @@ Some predicates require the declaration to be loaded because they use
 - `ImplementsAnyFilter`
 - `SubclassFilter`
 - `InstantiableFilter`
-- `CallableFilter` (concrete classes declaring or inheriting a public `__invoke`; constructor visibility is not considered)
+- `CallableFilter` (concrete classes and enums declaring or inheriting a public `__invoke`; constructor visibility is not considered)
 
 These predicates are appropriate when scanned classes are autoloadable. For pure
 source inspection of unloaded files, prefer metadata-only predicates such as

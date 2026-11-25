@@ -11,7 +11,7 @@ final class CallableFilter extends AbstractFilter
 {
     public function accept(mixed $value, string|int|null $key = null): bool
     {
-        if (!$value instanceof ClassInfo || !$value->isConcrete) {
+        if (!$value instanceof ClassInfo || (!$value->isConcrete && !$value->isEnum)) {
             return false;
         }
 

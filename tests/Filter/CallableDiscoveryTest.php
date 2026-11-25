@@ -27,11 +27,30 @@ it('recognizes an autoloadable invokable class before any caller loads it', func
     }
 });
 
-it('does not classify non-concrete declarations as callable classes', function (): void {
+it('does not classify interfaces, traits and abstract classes as callable objects', function (): void {
     $filter = new CallableFilter();
 
     expect($filter->accept(new ClassInfo('UnloadedContract', DeclarationType::Interface_)))->toBeFalse()
         ->and($filter->accept(new ClassInfo('UnloadedTrait', DeclarationType::Trait_)))->toBeFalse()
-        ->and($filter->accept(new ClassInfo('UnloadedAbstract', isAbstract: true)))->toBeFalse()
-        ->and($filter->accept(new ClassInfo('UnloadedEnum', DeclarationType::Enum_)))->toBeFalse();
+        ->and($filter->accept(new ClassInfo('UnloadedAbstract', isAbstract: true)))->toBeFalse();
+});
+
+
+enum ClassFinderCallableEnumRegressionFixture
+{
+    case CaseA;
+
+    public function __invoke(): void {}
+}
+
+enum ClassFinderNonCallableEnumRegressionFixture
+{
+    case CaseA;
+}
+
+it('recognizes enum cases that implement the public invocation contract', function (): void {
+    $filter = new CallableFilter();
+
+    expect($filter->accept(new ClassInfo(ClassFinderCallableEnumRegressionFixture::class, DeclarationType::Enum_)))->toBeTrue()
+        ->and($filter->accept(new ClassInfo(ClassFinderNonCallableEnumRegressionFixture::class, DeclarationType::Enum_)))->toBeFalse();
 });
