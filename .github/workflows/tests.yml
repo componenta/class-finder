@@ -43,4 +43,11 @@ jobs:
 
       - name: Smoke test benchmark subjects
         if: matrix.php == '8.4'
-        run: vendor/bin/phpbench run --filter=PredicateBench --iterations=1 --revs=1 --report=aggregate
+        shell: bash
+        run: |
+          set -o pipefail
+          vendor/bin/phpbench run --iterations=1 --revs=1 --report=aggregate | tee "$RUNNER_TEMP/class-finder-bench.log"
+          grep -Eq 'Subjects: [1-9][0-9]*,' "$RUNNER_TEMP/class-finder-bench.log"
+          for suite in DiscoveryBench PredicateBench ListenerBench; do
+            grep -Fq "$suite" "$RUNNER_TEMP/class-finder-bench.log"
+          done
