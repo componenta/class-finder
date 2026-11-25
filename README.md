@@ -299,5 +299,8 @@ Run `composer bench` to measure cold filesystem discovery, restored maps, warm r
 metadata and reflection predicates, and listener notification. PHPBench fixtures
 are prepared outside the measured subject; after hooks verify expected results.
 
-An unfiltered iterator delegates counting to its replay cache. Once the source is
-fully traversed, an unfiltered count does not iterate all cached declarations again.
+An unfiltered iterator delegates counting and array materialization to its replay
+cache after a successful traversal. Direct iterator sources may use string, integer
+or null keys and must yield `ClassInfo` instances. Invalid entries cause
+`UnexpectedValueException`, including before a predicate could discard them.
+A custom tokenizer returning invalid metadata aborts discovery.

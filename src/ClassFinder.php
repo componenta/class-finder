@@ -104,6 +104,14 @@ final class ClassFinder implements ClassFinderInterface, FilterableInterface
                 $declarations = $this->tokenizer->parse($content, $mode);
 
                 foreach ($declarations as $declaration) {
+                    if (!$declaration instanceof ClassInfo) {
+                        throw new \UnexpectedValueException(sprintf(
+                            'Tokenizer returned %s instead of %s.',
+                            get_debug_type($declaration),
+                            ClassInfo::class,
+                        ));
+                    }
+
                     yield $filePath => $declaration;
                 }
             } catch (\Throwable $e) {

@@ -9,7 +9,7 @@ use Componenta\Tokenizer\ClassInfo;
 use Componenta\Filter\FilterableInterface;
 
 /**
- * @extends \IteratorAggregate<string, ClassInfo>
+ * @extends \IteratorAggregate<string|int|null, ClassInfo>
  * @extends Arrayable<int, ClassInfo>
  */
 interface ClassIteratorInterface extends \IteratorAggregate, \Countable, Arrayable, FilterableInterface

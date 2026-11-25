@@ -10,6 +10,7 @@ use Componenta\Stdlib\ReplayableIterator;
 use Componenta\Tokenizer\ClassInfo;
 use Componenta\Tokenizer\DeclarationType;
 use RuntimeException;
+use UnexpectedValueException;
 
 /**
  * @method ClassIterator withFilter(PredicateInterface $filter, bool $prepend = false)
@@ -21,11 +22,11 @@ final class ClassIterator implements ClassIteratorInterface
         accept as private;
     }
 
-    /** @var ReplayableIterator<string, ClassInfo> */
+    /** @var ReplayableIterator<string|int|null, ClassInfo> */
     private ReplayableIterator $iterator;
 
     /**
-     * @param iterable<string, ClassInfo> $classes
+     * @param iterable<string|int|null, ClassInfo> $classes
      * @param PredicateInterface|iterable<PredicateInterface> $filters
      */
     public function __construct(
@@ -33,6 +34,12 @@ final class ClassIterator implements ClassIteratorInterface
         PredicateInterface|iterable $filters = [],
     ) {
         $this->initFilters($filters);
+        if (is_array($classes)) {
+            foreach ($classes as $key => $classInfo) {
+                self::assertEntry($key, $classInfo);
+            }
+        }
+
         $this->iterator = new ReplayableIterator($classes);
     }
 
@@ -84,20 +91,52 @@ final class ClassIterator implements ClassIteratorInterface
         })());
     }
 
-    /** @return \Generator<string, ClassInfo> */
+    /** @return \Generator<string|int|null, ClassInfo> */
     public function getIterator(): \Generator
     {
+        // A complete cache has already been validated by the constructor
+        // (array input) or by an earlier successful traversal.
+        $validate = !$this->iterator->traversed;
+        $unfiltered = $this->filters === [];
+
+        if ($unfiltered && !$validate) {
+            yield from $this->iterator->cursor();
+            return;
+        }
+
         foreach ($this->iterator->cursor() as $filename => $classInfo) {
-            if ($this->accept($classInfo, $filename)) {
+            if ($validate) {
+                self::assertEntry($filename, $classInfo);
+            }
+
+            if ($unfiltered || $this->accept($classInfo, $filename)) {
                 yield $filename => $classInfo;
             }
+        }
+    }
+
+    private static function assertEntry(mixed $key, mixed $value): void
+    {
+        if (!is_string($key) && !is_int($key) && $key !== null) {
+            throw new UnexpectedValueException(sprintf(
+                'Discovery keys must be string, int, or null; %s given.',
+                get_debug_type($key),
+            ));
+        }
+
+        if (!$value instanceof ClassInfo) {
+            throw new UnexpectedValueException(sprintf(
+                'Discovery entries must be %s instances; %s given.',
+                ClassInfo::class,
+                get_debug_type($value),
+            ));
         }
     }
 
     /** @return list<ClassInfo> */
     public function toArray(): array
     {
-        if ($this->filters === []) {
+        if ($this->filters === [] && $this->iterator->traversed) {
             return $this->iterator->toArray();
         }
 
@@ -113,7 +152,7 @@ final class ClassIterator implements ClassIteratorInterface
     /** @return int<0, max> */
     public function count(): int
     {
-        if ($this->filters === []) {
+        if ($this->filters === [] && $this->iterator->traversed) {
             return $this->iterator->count();
         }
 
