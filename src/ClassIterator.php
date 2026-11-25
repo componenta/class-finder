@@ -51,7 +51,7 @@ final class ClassIterator implements ClassIteratorInterface
             if (!is_array($entry)
                 || !is_string($entry['file'] ?? null) || $entry['file'] === ''
                 || !is_string($entry['name'] ?? null) || $entry['name'] === ''
-                || !is_string($entry['type'] ?? null) || DeclarationType::tryFrom($entry['type']) === null
+                || !is_string($entry['type'] ?? null) || ($type = DeclarationType::tryFrom($entry['type'])) === null
                 || !is_bool($entry['abstract'] ?? null)
                 || !is_bool($entry['final'] ?? null)
                 || !is_bool($entry['readonly'] ?? null)
@@ -59,25 +59,26 @@ final class ClassIterator implements ClassIteratorInterface
                 throw new RuntimeException(sprintf('Invalid discovery map declaration at index %d.', $index));
             }
 
-            // Copy scalar fields individually to detach PHP references.
+            // A packed snapshot detaches input references and uses less memory
+            // than a second associative map. Retain the already validated type.
             $validated[] = [
-                'file' => $entry['file'],
-                'name' => $entry['name'],
-                'type' => $entry['type'],
-                'abstract' => $entry['abstract'],
-                'final' => $entry['final'],
-                'readonly' => $entry['readonly'],
+                $entry['file'],
+                $entry['name'],
+                $type,
+                $entry['abstract'],
+                $entry['final'],
+                $entry['readonly'],
             ];
         }
 
         return new self((static function () use ($validated): \Generator {
-            foreach ($validated as $entry) {
-                yield $entry['file'] => new ClassInfo(
-                    fullyQualifiedName: $entry['name'],
-                    type: DeclarationType::from($entry['type']),
-                    isAbstract: $entry['abstract'],
-                    isFinal: $entry['final'],
-                    isReadonly: $entry['readonly'],
+            foreach ($validated as [$file, $name, $type, $abstract, $final, $readonly]) {
+                yield $file => new ClassInfo(
+                    fullyQualifiedName: $name,
+                    type: $type,
+                    isAbstract: $abstract,
+                    isFinal: $final,
+                    isReadonly: $readonly,
                 );
             }
         })());
