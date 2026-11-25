@@ -15,7 +15,7 @@ if (!is_file($localAutoload)) {
     $loader->setPsr4('Componenta\\DI\\', $packages . '/di/src');
     require_once $packages . '/config/src/functions.php';
     require_once $packages . '/di/src/Internal/functions.php';
+    $loader->addPsr4('Componenta\\Stdlib\\', $packages . '/iterator/src', true);
 }
-$loader->addPsr4('Componenta\\Stdlib\\', $packages . '/iterator/src', true);
 $loader->setPsr4('Componenta\\ClassFinder\\', $package . '/src');
 $loader->setPsr4('Componenta\\ClassFinder\\Tests\\', __DIR__);
