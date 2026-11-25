@@ -68,7 +68,8 @@ final class AttributeSearchFilter extends AbstractFilter
             return false;
         }
 
-        [$matchedClasses, $matchedPatterns] = $this->checkElement($value->reflector);
+        $reflector = $value->reflector;
+        [$matchedClasses, $matchedPatterns] = $this->checkElement($reflector);
         $matchCount = count($matchedClasses) + count($matchedPatterns);
 
         if (!$this->matchAll && $matchCount > 0) {
@@ -84,7 +85,7 @@ final class AttributeSearchFilter extends AbstractFilter
         }
 
         $deepMatchCount = $this->searchInMembersForMatches(
-            $value->reflector,
+            $reflector,
             $matchedClasses,
             $matchedPatterns,
         );

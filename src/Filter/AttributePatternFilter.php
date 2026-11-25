@@ -32,7 +32,8 @@ final class AttributePatternFilter extends AbstractFilter
             return false;
         }
 
-        if ($this->checkAttributes($value->reflector->getAttributes())) {
+        $reflector = $value->reflector;
+        if ($this->checkAttributes($reflector->getAttributes())) {
             return true;
         }
 
@@ -43,7 +44,7 @@ final class AttributePatternFilter extends AbstractFilter
         $matcher = $this->matcher;
 
         return $this->searchMemberAttributes(
-            $value->reflector,
+            $reflector,
             static fn(array $attrs): bool => array_any(
                 $attrs,
                 static fn($attr) => $matcher($attr->getName()),

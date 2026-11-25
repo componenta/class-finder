@@ -36,7 +36,8 @@ final class AnyAttributeFilter extends AbstractFilter
             return false;
         }
 
-        if (array_any($value->reflector->getAttributes(), fn($attr) => isset($this->attributesFlipped[strtolower($attr->getName())]))) {
+        $reflector = $value->reflector;
+        if (array_any($reflector->getAttributes(), fn($attr) => isset($this->attributesFlipped[strtolower($attr->getName())]))) {
             return true;
         }
 
@@ -45,7 +46,7 @@ final class AnyAttributeFilter extends AbstractFilter
         }
 
         return $this->searchMemberAttributes(
-            $value->reflector,
+            $reflector,
             fn(array $attrs): bool => array_any(
                 $attrs,
                 fn($attr) => isset($this->attributesFlipped[strtolower($attr->getName())]),

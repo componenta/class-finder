@@ -28,7 +28,8 @@ final class HasAnyAttributesFilter extends AbstractFilter
             return false;
         }
 
-        $hasAttributes = !empty($value->reflector->getAttributes());
+        $reflector = $value->reflector;
+        $hasAttributes = !empty($reflector->getAttributes());
 
         if ($hasAttributes) {
             return $this->mustHaveAttributes;
@@ -39,7 +40,7 @@ final class HasAnyAttributesFilter extends AbstractFilter
         }
 
         $hasAnyInMembers = $this->searchMemberAttributes(
-            $value->reflector,
+            $reflector,
             static fn(array $attrs): bool => !empty($attrs),
         );
 

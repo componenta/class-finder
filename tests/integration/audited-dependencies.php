@@ -116,4 +116,10 @@ foreach ([static fn () => $failed->current(), static fn () => $failed->toArray()
     $check($caught === $failure, 'Replay replaced original error.');
 }
 
+$info = new \Componenta\Tokenizer\ClassInfo(\stdClass::class);
+$exposed = $info->reflector;
+$exposed->__construct(\DateTime::class);
+$check($info->reflector->getName() === \stdClass::class, 'Reflection metadata ownership violated.');
+$check(!(new \Componenta\ClassFinder\Filter\ImplementsFilter(\DateTimeInterface::class))->accept($info), 'Filter accepted a substituted reflected identity.');
+
 echo "Audited dependency integration passed.\n";
