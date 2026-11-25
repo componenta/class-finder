@@ -27,3 +27,9 @@ it('rejects an empty any-of selection without requiring reflection or autoloadin
     expect(new ImplementsAnyFilter([])->accept($info))->toBeFalse()
         ->and(new AnyAttributeFilter([])->accept($info))->toBeFalse();
 });
+
+
+it('rejects invalid interface name types during predicate construction', function (mixed $name): void {
+    expect(fn () => new ImplementsFilter([$name]))->toThrow(InvalidArgumentException::class)
+        ->and(fn () => new ImplementsAnyFilter([$name]))->toThrow(InvalidArgumentException::class);
+})->with([null, 42, false, new stdClass()]);

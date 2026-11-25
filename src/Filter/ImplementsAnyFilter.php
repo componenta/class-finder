@@ -20,12 +20,20 @@ final class ImplementsAnyFilter extends AbstractFilter
     public function __construct(array $interfaces, iterable $iterable = [])
     {
         parent::__construct($iterable);
-        $this->interfaces = array_values($interfaces);
+        $snapshot = [];
+        foreach ($interfaces as $interface) {
+            if (!is_string($interface)) {
+                throw new \InvalidArgumentException('Interface names must be strings.');
+            }
+
+            $snapshot[] = $interface;
+        }
+        $this->interfaces = $snapshot;
     }
 
     public function accept(mixed $value, string|int|null $key = null): bool
     {
-        if (!$value instanceof ClassInfo || $value->isInterface || $value->isTrait) {
+        if (!$value instanceof ClassInfo || $value->isInterface || $value->isTrait || $this->interfaces === []) {
             return false;
         }
 

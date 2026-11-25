@@ -23,7 +23,15 @@ final class ImplementsFilter extends AbstractFilter
     public function __construct(string|array $interfaces, iterable $iterable = [])
     {
         parent::__construct($iterable);
-        $this->interfaces = is_array($interfaces) ? array_values($interfaces) : [$interfaces];
+        $snapshot = [];
+        foreach (is_array($interfaces) ? $interfaces : [$interfaces] as $interface) {
+            if (!is_string($interface)) {
+                throw new \InvalidArgumentException('Interface names must be strings.');
+            }
+
+            $snapshot[] = $interface;
+        }
+        $this->interfaces = $snapshot;
     }
 
     public function accept(mixed $value, string|int|null $key = null): bool

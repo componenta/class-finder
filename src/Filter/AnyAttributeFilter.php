@@ -32,7 +32,7 @@ final class AnyAttributeFilter extends AbstractFilter
 
     public function accept(mixed $value, string|int|null $key = null): bool
     {
-        if (!$value instanceof ClassInfo) {
+        if (!$value instanceof ClassInfo || $this->attributesFlipped === []) {
             return false;
         }
 
