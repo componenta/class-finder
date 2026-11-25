@@ -72,7 +72,7 @@ final class ClassFinder implements ClassFinderInterface, FilterableInterface
             $filePath = $file->getRealPath();
 
             if ($filePath === false) {
-                continue;
+                throw new \RuntimeException(sprintf('Cannot resolve discovered file "%s".', $file->getPathname()));
             }
 
             try {
@@ -87,6 +87,8 @@ final class ClassFinder implements ClassFinderInterface, FilterableInterface
                     'file' => $filePath,
                     'exception' => $e,
                 ]);
+
+                throw $e;
             }
         }
     }
