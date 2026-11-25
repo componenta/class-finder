@@ -13,6 +13,7 @@ final readonly class ClassListenerNotifier
     /**
      * Notifies all listeners for each discovered class,
      * then calls finalize() on finalizable listeners regardless of result count.
+     * Each distinct listener instance is notified once, in first-registration order.
      * Source, handling and finalization errors propagate immediately.
      * Finalization is a success callback, not cleanup; a failed traversal is
      * not finalized. Effects already performed by listeners are not rolled back.
@@ -25,7 +26,8 @@ final readonly class ClassListenerNotifier
                 throw new \UnexpectedValueException('Listener provider must yield ClassListenerInterface instances.');
             }
 
-            $listeners[] = $listener;
+            // Retained references prevent object-id reuse while building this snapshot.
+            $listeners[spl_object_id($listener)] = $listener;
         }
 
         foreach ($classes as $class) {

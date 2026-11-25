@@ -245,7 +245,7 @@ final class RouteCollector implements FinalizableListenerInterface
 ```
 
 `ClassListenerNotifier` snapshots the provider's listeners once per `notify()`
-call, so the same listener instances receive `handle()` and `finalize()`.
+call, so the same listener instances receive `handle()` and `finalize()`. Repeated registrations of the same object are coalesced in first-registration order; distinct objects of the same class remain independent.
 
 A listener can expose its completion state through `FinalizationStateInterface`. The `finalized`
 property becomes `true` only after a successful `finalize()` call. Repeated

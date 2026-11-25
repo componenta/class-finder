@@ -187,7 +187,7 @@ new AnyAttributeFilter([Route::class, Command::class], deepSearch: true);
 
 ## Слушатели
 
-Слушатели получают найденные объявления. `FinalizableListenerInterface` финализируется после сканирования, даже если объявления не найдены.
+Слушатели получают найденные объявления. Повторные регистрации одного объекта объединяются в порядке первого появления; разные экземпляры одного класса остаются независимыми. `FinalizableListenerInterface` финализируется после сканирования, даже если объявления не найдены.
 
 ```php
 use Componenta\ClassFinder\FinalizableListenerInterface;
