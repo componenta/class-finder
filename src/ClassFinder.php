@@ -68,12 +68,18 @@ final class ClassFinder implements ClassFinderInterface, FilterableInterface
             ->exclude($exclude)
             ->name('*.php');
 
+        $seen = [];
         foreach ($finder as $file) {
             $filePath = $file->getRealPath();
 
             if ($filePath === false) {
                 throw new \RuntimeException(sprintf('Cannot resolve discovered file "%s".', $file->getPathname()));
             }
+
+            if (isset($seen[$filePath])) {
+                continue;
+            }
+            $seen[$filePath] = true;
 
             try {
                 $content = $file->getContents();

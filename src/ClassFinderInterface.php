@@ -11,6 +11,7 @@ interface ClassFinderInterface
     /**
      * Discovery is lazy. A file read or tokenizer failure aborts traversal;
      * an incomplete result must not be treated as a successful scan.
+     * Each canonical file path is scanned once, even when search roots overlap.
      *
      * @param string|string[] $dirs
      * @param string|string[] $exclude
