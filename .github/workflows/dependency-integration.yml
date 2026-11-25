@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           repository: componenta/tokenizer
-          ref: b162b4ee8378589de72cdf3c22ad9ab44bca1c20
+          ref: fc7a1ef0416ad0ad0086bc572ed63d24d8105b1f
           path: .audit-deps/tokenizer
           persist-credentials: false
       - uses: actions/checkout@v7
@@ -41,6 +41,7 @@ jobs:
           composer update --no-interaction --prefer-dist
           php -r '$lock = json_decode(file_get_contents("composer.lock"), true, flags: JSON_THROW_ON_ERROR); $paths = ["componenta/tokenizer" => ".audit-deps/tokenizer", "componenta/iterator" => ".audit-deps/iterator"]; foreach ($lock["packages"] as $package) { if (isset($paths[$package["name"]]) && ($package["dist"]["type"] ?? null) === "path" && $package["dist"]["url"] === $paths[$package["name"]]) { unset($paths[$package["name"]]); } } if ($paths !== []) { throw new RuntimeException("Audited path packages not installed: " . implode(", ", array_keys($paths))); }'
           cmp .audit-deps/tokenizer/src/Tokenizer.php vendor/componenta/tokenizer/src/Tokenizer.php
+          cmp .audit-deps/tokenizer/src/ClassInfo.php vendor/componenta/tokenizer/src/ClassInfo.php
           cmp .audit-deps/iterator/src/ReplayableIterator.php vendor/componenta/iterator/src/ReplayableIterator.php
       - name: Verify cross-package discovery behavior
         run: php tests/integration/audited-dependencies.php

@@ -56,6 +56,10 @@ try {
         'Integration\\Service',
     ], 'Discovery lost or duplicated declarations.');
 
+    $check(file_put_contents($file, '<?php namespace readonly; class KeywordController {}') !== false, 'Cannot write keyword namespace fixture.');
+    $found = new ClassFinder()->find($dir)->withFilter(PatternFilter::exactNamespace('readonly'))->toArray();
+    $check(count($found) === 1 && $found[0]->fullyQualifiedName === 'readonly\\KeywordController', 'Keyword namespace discovery failed.');
+
     if (PHP_VERSION_ID >= 80500) {
         $callbackSource = <<<'PHP'
         <?php
@@ -121,5 +125,16 @@ $exposed = $info->reflector;
 $exposed->__construct(\DateTime::class);
 $check($info->reflector->getName() === \stdClass::class, 'Reflection metadata ownership violated.');
 $check(!(new \Componenta\ClassFinder\Filter\ImplementsFilter(\DateTimeInterface::class))->accept($info), 'Filter accepted a substituted reflected identity.');
+
+$stale = \Componenta\ClassFinder\ClassIterator::fromMap([
+    ['file' => '/stale.php', 'name' => \DateTimeInterface::class, 'type' => 'class', 'abstract' => false, 'final' => false, 'readonly' => false],
+]);
+$check(count($stale) === 1, 'Metadata-only traversal must remain available.');
+try {
+    $stale->withFilter(new \Componenta\ClassFinder\Filter\ImplementsFilter(\DateTimeInterface::class))->toArray();
+    throw new RuntimeException('Stale declaration kind unexpectedly accepted.');
+} catch (\ReflectionException) {
+    // The map must not silently be interpreted as a different declaration kind.
+}
 
 echo "Audited dependency integration passed.\n";
