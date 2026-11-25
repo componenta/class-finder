@@ -80,6 +80,15 @@ final class DiscoveryBench
         }
     }
 
+    public function prepareUnfilteredReplay(array $params): void
+    {
+        $this->prepareMap($params);
+        $this->warm = ClassIterator::fromMap($this->map);
+        if (count($this->warm) !== $params['size']) {
+            throw new RuntimeException('Invalid unfiltered replay benchmark fixture.');
+        }
+    }
+
     public function verifyCount(array $params): void
     {
         if ($this->result !== $params['size']) {
@@ -115,6 +124,23 @@ final class DiscoveryBench
     #[Bench\BeforeMethods('prepareReplay')]
     #[Bench\AfterMethods('verifyCount')]
     public function benchWarmFilteredArray(array $params): void
+    {
+        $this->result = count($this->warm->toArray());
+    }
+
+    #[Bench\ParamProviders('provideMapSizes')]
+    #[Bench\BeforeMethods('prepareUnfilteredReplay')]
+    #[Bench\AfterMethods('verifyCount')]
+    #[Bench\Revs(100)]
+    public function benchWarmUnfilteredCount(array $params): void
+    {
+        $this->result = count($this->warm);
+    }
+
+    #[Bench\ParamProviders('provideMapSizes')]
+    #[Bench\BeforeMethods('prepareUnfilteredReplay')]
+    #[Bench\AfterMethods('verifyCount')]
+    public function benchWarmUnfilteredArray(array $params): void
     {
         $this->result = count($this->warm->toArray());
     }

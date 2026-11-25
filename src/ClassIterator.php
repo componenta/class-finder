@@ -97,6 +97,10 @@ final class ClassIterator implements ClassIteratorInterface
     /** @return list<ClassInfo> */
     public function toArray(): array
     {
+        if ($this->filters === []) {
+            return $this->iterator->toArray();
+        }
+
         $array = [];
 
         foreach ($this as $classInfo) {
@@ -109,6 +113,10 @@ final class ClassIterator implements ClassIteratorInterface
     /** @return int<0, max> */
     public function count(): int
     {
+        if ($this->filters === []) {
+            return $this->iterator->count();
+        }
+
         $count = 0;
 
         foreach ($this as $_) {

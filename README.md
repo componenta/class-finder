@@ -111,7 +111,7 @@ $filtered = $classes->withFilter(PatternFilter::namespace('App\\Http'));
 ```
 
 `withFilter()` and `withoutFilter()` accept `PredicateInterface`. The iterator caches
-traversed declarations so it can be iterated more than once. Each `count()` evaluates
+traversed declarations so it can be iterated more than once. A filtered `count()` evaluates
 its current predicates again; changing a predicate or creating a filtered clone does
 not reuse a count computed for another predicate state. Interleaved iterations use
 independent cursors over the shared source cache. Nested traversal, filtered clones,
@@ -298,3 +298,6 @@ MIT
 Run `composer bench` to measure cold filesystem discovery, restored maps, warm replay,
 metadata and reflection predicates, and listener notification. PHPBench fixtures
 are prepared outside the measured subject; after hooks verify expected results.
+
+An unfiltered iterator delegates counting to its replay cache. Once the source is
+fully traversed, an unfiltered count does not iterate all cached declarations again.
