@@ -14,7 +14,7 @@ final class AnyAttributeFilter extends AbstractFilter
 {
     use SearchesClassMembers;
 
-    /** @var array<string, array-key> */
+    /** @var array<string, true> */
     private readonly array $attributesFlipped;
 
     /** @param array<array-key, string> $attributeNames */
@@ -24,7 +24,10 @@ final class AnyAttributeFilter extends AbstractFilter
         iterable $iterable = []
     ) {
         parent::__construct($iterable);
-        $this->attributesFlipped = array_flip(array_map(strtolower(...), $attributeNames));
+        $this->attributesFlipped = array_fill_keys(array_map(
+            static fn (string $name): string => strtolower(ltrim($name, '\\')),
+            $attributeNames,
+        ), true);
     }
 
     public function accept(mixed $value, string|int|null $key = null): bool

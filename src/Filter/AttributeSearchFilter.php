@@ -45,7 +45,7 @@ final class AttributeSearchFilter extends AbstractFilter
             if ($this->isPattern($attr)) {
                 $this->attributePatterns[] = $attr;
             } else {
-                $this->attributeClasses[] = $attr;
+                $this->attributeClasses[] = ltrim($attr, '\\');
             }
         }
 

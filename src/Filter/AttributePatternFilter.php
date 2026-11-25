@@ -19,7 +19,11 @@ final class AttributePatternFilter extends AbstractFilter
         iterable $iterable = []
     ) {
         parent::__construct($iterable);
-        $this->matcher = PatternMatcher::create($this->pattern);
+        // Exact attribute identifiers follow PHP's case-insensitive name
+        // matching. Wildcard patterns retain their textual semantics.
+        $this->matcher = strpbrk($pattern, '*?[') === false
+            ? static fn (string $name): bool => strcasecmp($name, ltrim($pattern, '\\')) === 0
+            : PatternMatcher::create($pattern);
     }
 
     public function accept(mixed $value, string|int|null $key = null): bool
