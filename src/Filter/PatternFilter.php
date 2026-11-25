@@ -45,10 +45,6 @@ final class PatternFilter extends AbstractFilter
 
         $subject = ($this->subjectExtractor)($value);
 
-        if ($subject === '' || $subject === null) {
-            return false;
-        }
-
         return ($this->matcher)($subject);
     }
 
