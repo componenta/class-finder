@@ -92,6 +92,10 @@ $contracts = $finder->find(
 
 Search mode is a per-call argument. It is not a DI configuration key.
 
+Discovery reads files lazily and propagates read and tokenizer exceptions rather
+than returning an incomplete scan. The tokenizer assumes syntactically valid PHP;
+class discovery is not a syntax validator.
+
 ## ClassIterator
 
 `ClassFinder::find()` returns `ClassIteratorInterface`: lazy, replayable,
@@ -137,7 +141,8 @@ $classes = ClassIterator::fromMap([
 Every record requires non-empty `file` and `name` strings, a `type` of `class`,
 `interface`, `trait` or `enum`, and boolean `abstract`, `final` and `readonly` flags.
 The entire map is validated before the iterator is returned; invalid records throw
-`RuntimeException`. An empty list is valid.
+`RuntimeException`. An empty list is valid. The validated scalar records are
+copied into a snapshot, including when the input contains PHP references.
 
 The factory preserves declaration order and repeated filenames. It does not read
 files or scan directories. Iteration, filtering and replay use the same `ClassIterator`
@@ -165,6 +170,7 @@ PatternFilter::in(['UserController', 'PostController']);
 
 Use `exactNamespace()` when the input is a namespace without wildcard. A bare
 string containing `\` is treated as a fully-qualified class name or FQN pattern.
+Use `exactNamespace('')` to select declarations in the global namespace.
 
 ## Reflection Filters
 
@@ -178,12 +184,19 @@ Some predicates require the declaration to be loaded because they use
 - `ImplementsFilter`
 - `ImplementsAnyFilter`
 - `SubclassFilter`
+- `InstantiableFilter`
+- `CallableFilter` (concrete classes declaring or inheriting a public `__invoke`; constructor visibility is not considered)
 
 These predicates are appropriate when scanned classes are autoloadable. For pure
 source inspection of unloaded files, prefer metadata-only predicates such as
-`PatternFilter`, `InstantiableFilter`, `IsAbstractFilter`, and `IsFinalFilter`.
+`PatternFilter`, `IsAbstractFilter`, and `IsFinalFilter`. Reflection predicates can
+trigger autoloading, so use them only with trusted code.
 
 ## Attribute Filters
+
+Exact attribute identifiers are case-insensitive and accept a leading namespace
+separator. Wildcard matching is case-sensitive. Deep searches inspect reflected
+methods, properties and constants, including inherited members exposed by reflection.
 
 ```php
 use Componenta\ClassFinder\Filter\AttributePatternFilter;

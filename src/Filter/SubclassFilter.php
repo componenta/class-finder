@@ -8,7 +8,8 @@ use Componenta\Filter\AbstractFilter;
 use Componenta\Tokenizer\ClassInfo;
 
 /**
- * Only works with concrete classes (excludes interfaces and traits).
+ * Matches class and enum declarations using ReflectionClass::isSubclassOf().
+ * Interfaces and traits are not candidates; abstract classes are allowed.
  */
 final class SubclassFilter extends AbstractFilter
 {
