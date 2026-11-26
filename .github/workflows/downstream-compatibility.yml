@@ -27,13 +27,13 @@ jobs:
       - uses: actions/checkout@v7
         with:
           repository: componenta/tokenizer
-          ref: e99c348a9c21ae0efe6444a658947010daa531ee
+          ref: f8d267055ec5ebb33d125da280091b9629fb080e
           path: .audit-deps/tokenizer
           persist-credentials: false
       - uses: actions/checkout@v7
         with:
           repository: componenta/iterator
-          ref: 005f152da3598c84f96121f72c9f9d92860697fd
+          ref: 2c444d7fa46ab1472968a1976d77676367f9e0b7
           path: .audit-deps/iterator
           persist-credentials: false
       - uses: actions/checkout@v7
@@ -51,9 +51,9 @@ jobs:
         working-directory: .audit-deps/app
         shell: bash
         run: |
-          composer config repositories.audit-class-finder '{"type":"path","url":"../class-finder","options":{"symlink":false,"versions":{"componenta/class-finder":"2.1.0"}}}'
-          composer config repositories.audit-tokenizer '{"type":"path","url":"../tokenizer","options":{"symlink":false,"versions":{"componenta/tokenizer":"1.0.0"}}}'
-          composer config repositories.audit-iterator '{"type":"path","url":"../iterator","options":{"symlink":false,"versions":{"componenta/iterator":"1.1.1"}}}'
+          composer config repositories.audit-class-finder '{"type":"path","url":"../class-finder","options":{"symlink":false,"versions":{"componenta/class-finder":"2.2.0"}}}'
+          composer config repositories.audit-tokenizer '{"type":"path","url":"../tokenizer","options":{"symlink":false,"versions":{"componenta/tokenizer":"1.0.1"}}}'
+          composer config repositories.audit-iterator '{"type":"path","url":"../iterator","options":{"symlink":false,"versions":{"componenta/iterator":"1.1.2"}}}'
           composer update --no-interaction --prefer-dist
           php -r '$lock = json_decode(file_get_contents("composer.lock"), true, flags: JSON_THROW_ON_ERROR); $expected = ["componenta/class-finder" => "../class-finder", "componenta/tokenizer" => "../tokenizer", "componenta/iterator" => "../iterator"]; foreach ($lock["packages"] as $package) { if (isset($expected[$package["name"]]) && ($package["dist"]["type"] ?? null) === "path" && $package["dist"]["url"] === $expected[$package["name"]]) { unset($expected[$package["name"]]); } } if ($expected !== []) { throw new RuntimeException("Missing audited packages: " . implode(", ", array_keys($expected))); }'
           for package in class-finder tokenizer iterator; do

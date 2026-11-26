@@ -18,11 +18,11 @@ composer require componenta/class-finder
 
 - PHP 8.4+
 - `symfony/finder`
-- `componenta/tokenizer`
+- `componenta/tokenizer` 1.0.1+
 - `componenta/filter` 2.x
 - `componenta/config` 3.x or 4.x
 - `componenta/arrayable`
-- `componenta/iterator`
+- `componenta/iterator` 1.1.2+
 - `psr/container`
 - `psr/log`
 

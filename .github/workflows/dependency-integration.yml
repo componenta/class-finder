@@ -19,13 +19,13 @@ jobs:
       - uses: actions/checkout@v7
         with:
           repository: componenta/tokenizer
-          ref: e99c348a9c21ae0efe6444a658947010daa531ee
+          ref: f8d267055ec5ebb33d125da280091b9629fb080e
           path: .audit-deps/tokenizer
           persist-credentials: false
       - uses: actions/checkout@v7
         with:
           repository: componenta/iterator
-          ref: 005f152da3598c84f96121f72c9f9d92860697fd
+          ref: 2c444d7fa46ab1472968a1976d77676367f9e0b7
           path: .audit-deps/iterator
           persist-credentials: false
       - uses: shivammathur/setup-php@v2
@@ -36,8 +36,8 @@ jobs:
       - name: Install exact audited sources through path repositories
         shell: bash
         run: |
-          composer config repositories.audit-tokenizer '{"type":"path","url":".audit-deps/tokenizer","options":{"symlink":false,"versions":{"componenta/tokenizer":"1.0.0"}}}'
-          composer config repositories.audit-iterator '{"type":"path","url":".audit-deps/iterator","options":{"symlink":false,"versions":{"componenta/iterator":"1.1.1"}}}'
+          composer config repositories.audit-tokenizer '{"type":"path","url":".audit-deps/tokenizer","options":{"symlink":false,"versions":{"componenta/tokenizer":"1.0.1"}}}'
+          composer config repositories.audit-iterator '{"type":"path","url":".audit-deps/iterator","options":{"symlink":false,"versions":{"componenta/iterator":"1.1.2"}}}'
           composer update --no-interaction --prefer-dist
           php -r '$lock = json_decode(file_get_contents("composer.lock"), true, flags: JSON_THROW_ON_ERROR); $paths = ["componenta/tokenizer" => ".audit-deps/tokenizer", "componenta/iterator" => ".audit-deps/iterator"]; foreach ($lock["packages"] as $package) { if (isset($paths[$package["name"]]) && ($package["dist"]["type"] ?? null) === "path" && $package["dist"]["url"] === $paths[$package["name"]]) { unset($paths[$package["name"]]); } } if ($paths !== []) { throw new RuntimeException("Audited path packages not installed: " . implode(", ", array_keys($paths))); }'
           cmp .audit-deps/tokenizer/src/Tokenizer.php vendor/componenta/tokenizer/src/Tokenizer.php
