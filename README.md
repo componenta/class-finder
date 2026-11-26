@@ -1,5 +1,7 @@
 # Componenta ClassFinder
 
+[Русская версия](README.ru.md)
+
 Lazy PHP declaration discovery with composable predicates and listener notification.
 
 ClassFinder scans PHP files, extracts named class/interface/trait/enum declarations
@@ -94,7 +96,9 @@ $contracts = $finder->find(
 Search mode is a per-call argument. It is not a DI configuration key.
 
 Discovery reads files lazily and propagates read and tokenizer exceptions rather
-than returning an incomplete scan. The tokenizer assumes syntactically valid PHP;
+than returning an incomplete scan. Directory and exclusion strings are captured
+when `find()` is called. Each canonical file path is scanned once, even when
+roots overlap; all declarations in a file remain independent. The tokenizer assumes syntactically valid PHP;
 class discovery is not a syntax validator.
 
 ## ClassIterator
@@ -119,6 +123,17 @@ independent cursors over the shared source cache. Nested traversal, filtered clo
 and `count()` do not interrupt an active traversal. If the source throws, later reads
 rethrow the original exception, so partial discovery cannot be mistaken for a complete
 result.
+
+An unfiltered iterator delegates counting and array materialization to its replay
+cache after a successful traversal. Direct iterator sources may use string, integer
+or null keys and must yield `ClassInfo` instances. Invalid entries cause
+`UnexpectedValueException`, including before a predicate could discard them.
+A custom tokenizer returning invalid metadata aborts discovery.
+
+`toArray()` returns a list: use `foreach` to retain filenames, since converting
+with preserved keys may overwrite repeated filenames. `hasFilter()` tests whether
+the identical predicate instance is registered; adding or removing a filter
+returns a new view without mutating the original predicate list.
 
 ### Restoring a prepared map
 
@@ -169,8 +184,9 @@ PatternFilter::fqn('App\\*\\*Controller');
 PatternFilter::in(['UserController', 'PostController']);
 ```
 
-Use `exactNamespace()` when the input is a namespace without wildcard. A bare
-string containing `\` is treated as a fully-qualified class name or FQN pattern.
+Use `exactNamespace()` when the input is a namespace without wildcard. Patterns are case-sensitive. A pattern ending in a single `\\*` selects a namespace
+and its children; other patterns containing namespace separators target the full name.
+Use `fqn()` to explicitly target the fully qualified name.
 Use `exactNamespace('')` to select declarations in the global namespace.
 
 ## Reflection Filters
@@ -219,12 +235,16 @@ AttributePatternFilter::attributePrefix('App\\Attribute\\');
 new AnyAttributeFilter([Route::class, Command::class], deepSearch: true);
 ```
 
-`deepSearch: true` also checks methods, properties, and constants.
+Deep matching does not examine method parameters or instantiate attributes. In AND
+mode, required attributes may be distributed across the declaration and its members.
+An empty attribute or interface selection matches nothing.
 
 ## Listeners
 
 Listeners are notified for each accepted declaration. Finalizable listeners are
-finalized after scanning, even when no declarations were found.
+finalized after a successful scan, even when no declarations were found. Discovery,
+handling and finalization errors propagate immediately; completed listener effects
+are not rolled back. Finalization is not an error-cleanup callback.
 
 ```php
 use Componenta\ClassFinder\FinalizableListenerInterface;
@@ -273,10 +293,11 @@ The Config 3.x and 4.x factory/composition contracts are tested independently of
 a specific DI implementation. The separate DI 5.x integration tests use Config 3.x,
 as required by DI 5.x itself.
 
-Register the package provider in a PSR-11 compatible container:
+Pass the package's configuration provider to your composition root. It returns
+factory registrations for the finder, listener provider and notifier:
 
 ```php
-$config = (new Componenta\ClassFinder\ConfigProvider())();
+$contribution = (new Componenta\ClassFinder\ConfigProvider())();
 ```
 
 Runtime configuration keys are defined in `Componenta\ClassFinder\ConfigKey`:
@@ -294,13 +315,14 @@ Optional tokenizer and logger services may be omitted. If registered under their
 interface IDs, they must resolve to compatible instances; a registered `null`
 or incompatible service is a configuration error, not a request to use defaults.
 
-## Breaking Changes for filter 2.x
+## Development
 
-- `ClassFinder` and `ClassIterator` accept `PredicateInterface` instead of `FilterInterface`.
-- Pure predicates no longer need `IteratorAggregate`, `withIterable()`, or `toArray()`.
-- Collection-only filter operators cannot be passed as discovery predicates.
-- Existing ClassFinder filter classes remain source-compatible because `FilterInterface`
-  extends `PredicateInterface` in componenta/filter 2.x.
+```bash
+composer install
+composer test
+```
+
+Tests run on PHP 8.4 and 8.5, including reverse-order execution.
 
 ## License
 
@@ -312,8 +334,3 @@ Run `composer bench` to measure cold filesystem discovery, restored maps, warm r
 metadata and reflection predicates, and listener notification. PHPBench fixtures
 are prepared outside the measured subject; after hooks verify expected results.
 
-An unfiltered iterator delegates counting and array materialization to its replay
-cache after a successful traversal. Direct iterator sources may use string, integer
-or null keys and must yield `ClassInfo` instances. Invalid entries cause
-`UnexpectedValueException`, including before a predicate could discard them.
-A custom tokenizer returning invalid metadata aborts discovery.
