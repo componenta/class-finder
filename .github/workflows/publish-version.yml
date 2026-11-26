@@ -1,0 +1,91 @@
+name: Publish v2.2.0
+
+on:
+  push:
+    branches: ['release/v2.2.0']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-v2.2.0
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: PHP ${{ matrix.php }} release gate
+    if: github.repository == 'componenta/class-finder' && github.ref == 'refs/heads/release/v2.2.0'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.4', '8.5']
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: 59cfaaa19b9c9c1abaf14464a007dbe9754162b4
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: composer:v2
+      - run: composer validate --strict
+      - run: find src tests benchmarks -name '*.php' -print0 | xargs -0 -n1 php -l
+      - run: composer install --no-interaction --prefer-dist
+      - run: composer test
+      - run: vendor/bin/pest --reverse-order
+
+  publish:
+    name: Publish v2.2.0
+    needs: test
+    if: github.repository == 'componenta/class-finder' && github.ref == 'refs/heads/release/v2.2.0'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_SHA: 59cfaaa19b9c9c1abaf14464a007dbe9754162b4
+      TAG: v2.2.0
+    steps:
+      - name: Verify target and create release
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')" = "$RELEASE_SHA"
+          for gate in 45852390174 45852390124 45852390103 45852390093; do
+            test "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$gate" --jq '.head_sha')" = "$RELEASE_SHA"
+            test "$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$gate" --jq '.conclusion')" = "success"
+          done
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release already exists; refusing to replace it."
+            exit 1
+          fi
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" >/dev/null 2>&1; then
+            echo "Tag already exists; refusing to replace it."
+            exit 1
+          fi
+          cat > "$RUNNER_TEMP/release-notes.md" <<'NOTES'
+          ## What's changed
+          - Discover valid PHP declarations reliably, including namespaces with contextual keywords, closures, grouped imports and PHP closing tags.
+          - Propagate discovery failures instead of accepting incomplete scans; preserve validated metadata and shared replay behavior.
+          - Correct reflection predicates, listener registration and finalization, and configuration validation.
+          - Preserve independent filtered views and optimize repeated unfiltered counts.
+          - Support Componenta Config 3.x and 4.x.
+          - Update English and Russian documentation.
+          
+          ## Requirements
+          - PHP 8.4+
+          - componenta/tokenizer ^1.0.1
+          - componenta/iterator ^1.1.2
+          
+          ## Verification
+          Pest on PHP 8.4 and 8.5 in normal and reverse order; Config 4 contract suite; integration with released and audited dependencies; App main and runtime-contracts compatibility; nine PHPBench subjects.
+          
+          ## Behavior corrections
+          Discovery and invalid configuration errors are reported rather than silently ignored. Reflection filters may autoload declarations. Duplicate registrations of the same listener instance are coalesced, and failed discovery does not finalize listeners.
+          NOTES
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$RELEASE_SHA" --title 'v2.2.0 — Reliable discovery and Config 4 support' --notes-file "$RUNNER_TEMP/release-notes.md" --latest
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.sha')" = "$RELEASE_SHA"
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json url,tagName,isDraft,isPrerelease
