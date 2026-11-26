@@ -27,21 +27,26 @@ final class AttributeSearchFilter extends AbstractFilter
 
     /** @param array<array-key, string> $attributes */
     public function __construct(
-        private readonly array $attributes = [],
+        array $attributes = [],
         private readonly bool $matchAll = false,
         private readonly bool $deepSearch = false,
         iterable $iterable = []
     ) {
         parent::__construct($iterable);
 
-        $this->categorizeAttributes();
-        $this->totalSearches = count($this->attributes);
+        $this->categorizeAttributes($attributes);
+        $this->totalSearches = count($attributes);
         $this->createPatternMatchers();
     }
 
-    private function categorizeAttributes(): void
+    /** @param array<array-key, string> $attributes */
+    private function categorizeAttributes(array $attributes): void
     {
-        foreach ($this->attributes as $attr) {
+        foreach ($attributes as $attr) {
+            if (!is_string($attr)) {
+                throw new \InvalidArgumentException('Attribute names and patterns must be strings.');
+            }
+
             if ($this->isPattern($attr)) {
                 $this->attributePatterns[] = $attr;
             } else {

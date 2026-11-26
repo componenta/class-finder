@@ -135,6 +135,7 @@ final class PatternFilter extends AbstractFilter
         return self::forTarget($pattern, self::TARGET_FQN);
     }
 
+    /** @param array<array-key, string> $values */
     public static function in(array $values): AbstractFilter
     {
         return new InValuesFilter($values);

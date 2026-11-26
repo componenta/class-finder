@@ -194,6 +194,10 @@ trigger autoloading, so use them only with trusted code.
 
 ## Attribute Filters
 
+Class-name and attribute-name lists accept string values only. Invalid entries
+raise `InvalidArgumentException` during predicate construction, without implicit
+string conversion.
+
 Exact attribute identifiers are case-insensitive and accept a leading namespace
 separator. Wildcard matching is case-sensitive. Deep searches inspect reflected
 methods, properties and constants, including inherited members exposed by reflection.

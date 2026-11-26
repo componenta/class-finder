@@ -12,14 +12,24 @@ use Componenta\Tokenizer\ClassInfo;
  */
 final class InValuesFilter extends AbstractFilter
 {
+    /** @var array<string, true> */
     private readonly array $valueSet;
 
+    /** @param array<array-key, string> $values */
     public function __construct(
         array $values,
         iterable $iterable = []
     ) {
         parent::__construct($iterable);
-        $this->valueSet = array_flip($values);
+        $names = [];
+        foreach ($values as $value) {
+            if (!is_string($value)) {
+                throw new \InvalidArgumentException('Class names must be strings.');
+            }
+
+            $names[$value] = true;
+        }
+        $this->valueSet = $names;
     }
 
     public function accept(mixed $value, string|int|null $key = null): bool

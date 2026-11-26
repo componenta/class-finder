@@ -24,10 +24,15 @@ final class AnyAttributeFilter extends AbstractFilter
         iterable $iterable = []
     ) {
         parent::__construct($iterable);
-        $this->attributesFlipped = array_fill_keys(array_map(
-            static fn (string $name): string => strtolower(ltrim($name, '\\')),
-            $attributeNames,
-        ), true);
+        $names = [];
+        foreach ($attributeNames as $name) {
+            if (!is_string($name)) {
+                throw new \InvalidArgumentException('Attribute names must be strings.');
+            }
+
+            $names[strtolower(ltrim($name, '\\'))] = true;
+        }
+        $this->attributesFlipped = $names;
     }
 
     public function accept(mixed $value, string|int|null $key = null): bool

@@ -17,7 +17,13 @@ it('rejects non-string elements in configured class and attribute name lists', f
     expect(fn () => new AnyAttributeFilter($values))->toThrow(InvalidArgumentException::class)
         ->and(fn () => new AttributeSearchFilter($values))->toThrow(InvalidArgumentException::class)
         ->and(fn () => PatternFilter::in($values))->toThrow(InvalidArgumentException::class);
-})->with([42, true, null, [], new stdClass()]);
+})->with([
+    'integer' => [42],
+    'boolean' => [true],
+    'null' => [null],
+    'array' => [[]],
+    'object' => [new stdClass()],
+]);
 
 it('does not execute string conversion on an invalid filter name', function (): void {
     $invalid = new class implements Stringable {
