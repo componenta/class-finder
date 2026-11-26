@@ -1,0 +1,70 @@
+name: Downstream App compatibility
+
+on:
+  push:
+    branches: ['fix/deep-audit-2026-11-25']
+  workflow_dispatch:
+
+jobs:
+  app:
+    name: PHP ${{ matrix.php }} / App ${{ matrix.app.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.4', '8.5']
+        app:
+          - name: main
+            ref: 49025670f902c596af886ee4493e114c8b44303b
+          - name: runtime-contracts
+            ref: 95fa40144b5b0f73e7998b301eaa4bc422dc2b52
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: .audit-deps/class-finder
+          persist-credentials: false
+      - uses: actions/checkout@v7
+        with:
+          repository: componenta/tokenizer
+          ref: e99c348a9c21ae0efe6444a658947010daa531ee
+          path: .audit-deps/tokenizer
+          persist-credentials: false
+      - uses: actions/checkout@v7
+        with:
+          repository: componenta/iterator
+          ref: 005f152da3598c84f96121f72c9f9d92860697fd
+          path: .audit-deps/iterator
+          persist-credentials: false
+      - uses: actions/checkout@v7
+        with:
+          repository: componenta/app
+          ref: ${{ matrix.app.ref }}
+          path: .audit-deps/app
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: composer:v2
+      - name: Install downstream App with exact audit sources
+        working-directory: .audit-deps/app
+        shell: bash
+        run: |
+          composer config repositories.audit-class-finder '{"type":"path","url":"../class-finder","options":{"symlink":false,"versions":{"componenta/class-finder":"2.1.0"}}}'
+          composer config repositories.audit-tokenizer '{"type":"path","url":"../tokenizer","options":{"symlink":false,"versions":{"componenta/tokenizer":"1.0.0"}}}'
+          composer config repositories.audit-iterator '{"type":"path","url":"../iterator","options":{"symlink":false,"versions":{"componenta/iterator":"1.1.1"}}}'
+          composer update --no-interaction --prefer-dist
+          php -r '$lock = json_decode(file_get_contents("composer.lock"), true, flags: JSON_THROW_ON_ERROR); $expected = ["componenta/class-finder" => "../class-finder", "componenta/tokenizer" => "../tokenizer", "componenta/iterator" => "../iterator"]; foreach ($lock["packages"] as $package) { if (isset($expected[$package["name"]]) && ($package["dist"]["type"] ?? null) === "path" && $package["dist"]["url"] === $expected[$package["name"]]) { unset($expected[$package["name"]]); } } if ($expected !== []) { throw new RuntimeException("Missing audited packages: " . implode(", ", array_keys($expected))); }'
+          for package in class-finder tokenizer iterator; do
+            diff -qr "../$package/src" "vendor/componenta/$package/src"
+          done
+          composer show componenta/class-finder
+          composer show componenta/tokenizer
+          composer show componenta/iterator
+      - name: Run downstream App tests
+        working-directory: .audit-deps/app
+        run: composer test
+      - name: Run downstream App tests in reverse order
+        working-directory: .audit-deps/app
+        run: vendor/bin/pest --reverse-order
