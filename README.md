@@ -281,6 +281,10 @@ The `FILTERS` key keeps its existing name, but entries are predicates in 2.x. Li
 config remains fail-fast: every listener entry must be an instance or a service id string
 resolving to `ClassListenerInterface`.
 
+Optional tokenizer and logger services may be omitted. If registered under their
+interface IDs, they must resolve to compatible instances; a registered `null`
+or incompatible service is a configuration error, not a request to use defaults.
+
 ## Breaking Changes for filter 2.x
 
 - `ClassFinder` and `ClassIterator` accept `PredicateInterface` instead of `FilterInterface`.

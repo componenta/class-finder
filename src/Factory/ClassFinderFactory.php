@@ -8,8 +8,8 @@ use Componenta\ClassFinder\ClassFinder;
 use Componenta\ClassFinder\ConfigKey;
 use Componenta\Config\Config;
 use Componenta\Filter\PredicateInterface;
-use InvalidArgumentException;
 use Componenta\Tokenizer\TokenizerInterface;
+use InvalidArgumentException;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -32,13 +32,31 @@ final class ClassFinderFactory
             ));
         }
 
-        $tokenizer = $container->has(TokenizerInterface::class)
-            ? $container->get(TokenizerInterface::class)
-            : null;
+        $tokenizer = null;
+        if ($container->has(TokenizerInterface::class)) {
+            $tokenizer = $container->get(TokenizerInterface::class);
+            if (!$tokenizer instanceof TokenizerInterface) {
+                throw new InvalidArgumentException(sprintf(
+                    'Service "%s" must implement %s, got %s.',
+                    TokenizerInterface::class,
+                    TokenizerInterface::class,
+                    get_debug_type($tokenizer),
+                ));
+            }
+        }
 
-        $logger = $container->has(LoggerInterface::class)
-            ? $container->get(LoggerInterface::class)
-            : null;
+        $logger = null;
+        if ($container->has(LoggerInterface::class)) {
+            $logger = $container->get(LoggerInterface::class);
+            if (!$logger instanceof LoggerInterface) {
+                throw new InvalidArgumentException(sprintf(
+                    'Service "%s" must implement %s, got %s.',
+                    LoggerInterface::class,
+                    LoggerInterface::class,
+                    get_debug_type($logger),
+                ));
+            }
+        }
 
         return new ClassFinder(
             $filters,
