@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           repository: componenta/tokenizer
-          ref: fc7a1ef0416ad0ad0086bc572ed63d24d8105b1f
+          ref: e99c348a9c21ae0efe6444a658947010daa531ee
           path: .audit-deps/tokenizer
           persist-credentials: false
       - uses: actions/checkout@v7

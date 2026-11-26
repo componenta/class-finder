@@ -60,6 +60,18 @@ try {
     $found = new ClassFinder()->find($dir)->withFilter(PatternFilter::exactNamespace('readonly'))->toArray();
     $check(count($found) === 1 && $found[0]->fullyQualifiedName === 'readonly\\KeywordController', 'Keyword namespace discovery failed.');
 
+    $tagSource = '<?php namespace TagIntegration ?><?php use Vendor\\Dependency ?>HTML<?php final readonly class TagController {} class OtherService {}';
+    $check(file_put_contents($file, $tagSource) !== false, 'Cannot write PHP tag fixture.');
+    $classes = new ClassFinder()->find($dir);
+    $found = $classes->withFilter(PatternFilter::endsWith('Controller'))->toArray();
+    $check(count($classes) === 2 && count($found) === 1, 'Implicit tag termination lost declarations.');
+    $check(
+        $found[0]->fullyQualifiedName === 'TagIntegration\\TagController'
+        && $found[0]->isFinal
+        && $found[0]->isReadonly,
+        'Implicit tag termination changed declaration metadata.',
+    );
+
     if (PHP_VERSION_ID >= 80500) {
         $callbackSource = <<<'PHP'
         <?php
