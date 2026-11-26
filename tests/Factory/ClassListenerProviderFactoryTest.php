@@ -133,4 +133,4 @@ it('rejects malformed listener registrations through the runtime container', fun
     'service id without list' => ['some-listener-service'],
     'false' => [false],
     'non-list object' => [new stdClass()],
-]);
+])->group('componenta-di');

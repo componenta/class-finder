@@ -28,4 +28,4 @@ it('reads filters and listener services from the runtime Config in the existing 
     expect(array_map(static fn ($info): string => $info->fullyQualifiedName, $classes))->toBe([UserController::class]);
     expect($container->get(ClassListenerProviderInterface::class)->getClassListeners())
         ->toBe([$container->get(SimpleListener::class)]);
-});
+})->group('componenta-di');

@@ -1,0 +1,34 @@
+name: Config 4 compatibility
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  config-v4:
+    name: PHP ${{ matrix.php }} / Config 4 / PSR-11
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.4', '8.5']
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: composer:v2
+      - name: Install Config 4 without the DI 5 development dependency
+        shell: bash
+        run: |
+          composer remove --dev --no-update componenta/di
+          composer require --no-update 'componenta/config:^4.0'
+          composer update --no-interaction --prefer-dist
+          php -r 'require "vendor/autoload.php"; if (!str_starts_with(Composer\InstalledVersions::getVersion("componenta/config"), "4.")) { throw new RuntimeException("Config 4 was not installed."); }'
+          composer show componenta/config
+      - name: Run the package contract suite
+        run: vendor/bin/pest --exclude-group=componenta-di
+      - name: Run the package contract suite in reverse order
+        run: vendor/bin/pest --exclude-group=componenta-di --reverse-order
