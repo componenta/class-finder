@@ -16,6 +16,7 @@ composer require componenta/class-finder
 - `symfony/finder`
 - `componenta/tokenizer`
 - `componenta/filter` 2.x
+- `componenta/config` 3.x или 4.x
 - `componenta/arrayable`
 - `componenta/iterator`
 - `psr/container`
@@ -212,6 +213,10 @@ final class RouteCollector implements FinalizableListenerInterface
 ```
 
 ## Интеграция с контейнером
+
+Контракты фабрик и композиции конфигурации проверяются с Config 3.x и 4.x независимо
+от конкретной реализации контейнера. Отдельные интеграционные тесты DI 5.x
+используют Config 3.x в соответствии с ограничением зависимости самого DI 5.x.
 
 ```php
 $config = (new Componenta\ClassFinder\ConfigProvider())();

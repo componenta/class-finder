@@ -18,6 +18,7 @@ composer require componenta/class-finder
 - `symfony/finder`
 - `componenta/tokenizer`
 - `componenta/filter` 2.x
+- `componenta/config` 3.x or 4.x
 - `componenta/arrayable`
 - `componenta/iterator`
 - `psr/container`
@@ -267,6 +268,10 @@ artifact format and writes. Class discovery and listener notification remain
 available independently of application builds.
 
 ## Container Integration
+
+The Config 3.x and 4.x factory/composition contracts are tested independently of
+a specific DI implementation. The separate DI 5.x integration tests use Config 3.x,
+as required by DI 5.x itself.
 
 Register the package provider in a PSR-11 compatible container:
 
